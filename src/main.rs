@@ -43,17 +43,51 @@ fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-fn remindme(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     use std::thread;
-    thread::sleep(std::time::Duration::new(1, 0));
 
-    let remind_msg = format!(
-        "{} wants to be reminded of something. {}",
-        &msg.author.name,
-        args.rest()
-    );
-    if let Err(err) = msg.channel_id.say(&ctx.http, remind_msg) {
-        println!("Error giving message: {:?}", err);
+    let first_arg = args.single::<String>().unwrap();
+    let mut reply_msg: String = String::from("Failed to parse date.");
+
+    let time_to_wait_in_seconds = match first_arg.parse::<i32>() {
+        Ok(n) => {
+            let second_arg = args.single::<String>().unwrap();
+            match second_arg.as_ref() {
+                "s" | "second" | "seconds" | "sec" | "secs" => {
+                    reply_msg = format!("Will remind you in {} seconds.", n);
+                    // msg.reply(&ctx, format!("Will remind you in {} seconds.", n))?;
+                    n
+                }
+                "m" | "minute" | "minutes" | "min" | "mins" => {
+                    reply_msg = format!("Will remind you in {} minutes.", n);
+                    // msg.reply(&ctx, format!("Will remind you in {} minutes.", n))?;
+                    n * 60
+                }
+                "h" | "hour" | "hours" | "hr" | "hrs" => {
+                    reply_msg = format!("Will remind you in {} hours.", n);
+                    // msg.reply(&ctx, format!("Will remind you in {} hours.", n))?;
+                    n * 60 * 60
+                }
+                _ => {
+                    reply_msg = format!("Will remind you in {} minutes.", n);
+                    // msg.reply(&ctx, format!("Will remind you in {} minutes.", n))?;
+                    n * 60
+                }
+            }
+        }
+        Err(e) => 0,
+    };
+
+    msg.channel_id.say(&ctx.http, &reply_msg)?;
+
+    if time_to_wait_in_seconds > 0 {
+        let remind_msg = format!("Reminder <@{}>: {}", &msg.author.id, args.rest());
+
+        thread::sleep(std::time::Duration::new(time_to_wait_in_seconds as u64, 0));
+
+        if let Err(err) = msg.channel_id.say(&ctx.http, remind_msg) {
+            println!("Error giving message: {:?}", err);
+        }
     }
 
     Ok(())
