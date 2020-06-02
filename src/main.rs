@@ -14,7 +14,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 #[group]
-#[commands(ping, remindme)]
+#[commands(help, ping, remindme)]
 struct General;
 
 fn main() {
@@ -43,6 +43,13 @@ fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
+fn help(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
+    msg.channel_id
+        .say(&ctx.http, "Available commands: \n * remindme ")?;
+    Ok(())
+}
+
+#[command]
 fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     use std::thread;
 
@@ -54,23 +61,20 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             let second_arg = args.single::<String>().unwrap();
             match second_arg.as_ref() {
                 "s" | "second" | "seconds" | "sec" | "secs" => {
-                    reply_msg = format!("Will remind you in {} seconds.", n);
-                    // msg.reply(&ctx, format!("Will remind you in {} seconds.", n))?;
+                    reply_msg = format!("Will remind you in {} seconds.", n); // This should be replaced with a a Direct Message, instead:
+                                                                              // reply_msg = format!("React to this message to also be reminded.");
                     n
                 }
                 "m" | "minute" | "minutes" | "min" | "mins" => {
                     reply_msg = format!("Will remind you in {} minutes.", n);
-                    // msg.reply(&ctx, format!("Will remind you in {} minutes.", n))?;
                     n * 60
                 }
                 "h" | "hour" | "hours" | "hr" | "hrs" => {
                     reply_msg = format!("Will remind you in {} hours.", n);
-                    // msg.reply(&ctx, format!("Will remind you in {} hours.", n))?;
                     n * 60 * 60
                 }
                 _ => {
                     reply_msg = format!("Will remind you in {} minutes.", n);
-                    // msg.reply(&ctx, format!("Will remind you in {} minutes.", n))?;
                     n * 60
                 }
             }
@@ -81,11 +85,31 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     msg.channel_id.say(&ctx.http, &reply_msg)?;
 
     if time_to_wait_in_seconds > 0 {
-        let remind_msg = format!("Reminder <@{}>: {}", &msg.author.id, args.rest());
+        let mut msg_url = String::from("Url not found");
+        if msg.is_private() {
+            msg_url = format!(
+                "http://discordapp.com/channels/@me/{}/{}",
+                msg.channel_id, msg.id
+            );
+        } else {
+            format!(
+                "http://discordapp.com/channels/{}/{}/{}",
+                msg.guild_id.unwrap(),
+                msg.channel_id,
+                msg.id
+            );
+        }
+        let remind_msg = format!(
+            "Reminder <@{}>: {} \n for message {}",
+            &msg.author.id,
+            args.rest(),
+            &msg_url
+        );
 
         thread::sleep(std::time::Duration::new(time_to_wait_in_seconds as u64, 0));
 
         if let Err(err) = msg.channel_id.say(&ctx.http, remind_msg) {
+            // This should be replaced with a Direct Message
             println!("Error giving message: {:?}", err);
         }
     }
