@@ -72,6 +72,22 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
                     reply_msg = format!("{} hours", n);
                     n * 60 * 60
                 }
+                "d" | "day" | "days" => {
+                    reply_msg = format!("{} days", n);
+                    n * 60 * 60 * 24
+                }
+                "w" | "week" | "weeks" => {
+                    reply_msg = format!("{} days", n);
+                    n * 60 * 60 * 24 * 7
+                }
+                "month" | "months" => {
+                    reply_msg = format!("{} days", n);
+                    n * 60 * 60 * 24 * 7 * 4
+                }
+                "y" | "year" | "years" => {
+                    reply_msg = format!("{} days", n);
+                    n * 60 * 60 * 24 * 7 * 4 * 12
+                }
                 _ => {
                     reply_msg = format!("{} minutes", n);
                     n * 60

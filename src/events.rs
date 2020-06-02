@@ -8,30 +8,61 @@ use serenity::{
 
 pub struct Handler;
 
+fn split_once(in_string: &str) -> (&str, &str) {
+    let mut splitter = in_string.splitn(2, ':');
+    let first = splitter.next().unwrap();
+    let second = splitter.next().unwrap();
+    (first, second)
+}
+
 impl EventHandler for Handler {
-    fn reaction_add(&self, ctx: Context, reaction: Reaction) {
-        if reaction.message(&ctx.http).unwrap().author.bot {
-            println!("Bot made a reaction");
-        } else {
-            // if let Err(why) = reaction.channel_id.say(
-            //     &ctx.http,
-            println!(
-                "{} left a {} reaction ",
-                reaction.user(&ctx).unwrap().name,
-                match reaction.emoji {
-                    ReactionType::Custom {
-                        animated: _animated,
-                        id: _id,
-                        name,
-                    } => name.unwrap(),
-                    ReactionType::Unicode(uni) => uni,
-                    ReactionType::__Nonexhaustive => String::from("Unknown"),
+    fn reaction_add(&self, ctx: Context, mut reaction: Reaction) {
+        let reaction_msg = reaction.message(&ctx.http).unwrap();
+        match &reaction.emoji {
+            ReactionType::Unicode(uni) => match uni.as_ref() {
+                "👀" => {
+                    let message_content = &reaction_msg.content;
+                    // let msg_args: Vec<&str> = message_content.split_whitespace().collect();
+                    let mut msg_url = String::from("Url not found");
+                    println!(
+                        "Msg author {} reaction user {}",
+                        reaction_msg.author.id, reaction.user_id
+                    );
+
+                    if reaction_msg.author.id == reaction.user_id
+                        || reaction.user(&ctx).unwrap().bot
+                    {
+                        println!("Same user slash bot cannot use :eyes: emoji.");
+                    } else {
+                        println!("Start processing :eyes: emoji.");
+
+                        if reaction_msg.is_private() {
+                            msg_url = format!(
+                                "http://discordapp.com/channels/@me/{}/{}",
+                                reaction_msg.channel_id, reaction_msg.id
+                            );
+                        } else {
+                            msg_url = format!(
+                                "http://discordapp.com/channels/{}/{}/{}",
+                                reaction_msg.guild_id.unwrap(),
+                                reaction_msg.channel_id,
+                                reaction_msg.id
+                            );
+                        }
+                        // let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
+                        let remind_msg = format!("Reminder for link: {}", &msg_url);
+                        println!("Requested reminder through :eyes: emoji.");
+                        let dm = &reaction
+                            .user(&ctx)
+                            .unwrap()
+                            .direct_message(&ctx.http, |m| m.content(remind_msg));
+                    }
+                    ()
                 }
-            );
-            // ) {
-            //     println!("Error reacting to a reaction: {:?}", why);
-            // }
-        }
+                _ => (),
+            },
+            _ => (),
+        };
     }
     fn message(&self, ctx: Context, _new_message: Message) {
         if _new_message.content == "???" {
