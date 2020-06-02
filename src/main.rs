@@ -61,20 +61,19 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             let second_arg = args.single::<String>().unwrap();
             match second_arg.as_ref() {
                 "s" | "second" | "seconds" | "sec" | "secs" => {
-                    reply_msg = format!("Will remind you in {} seconds.", n); // This should be replaced with a a Direct Message, instead:
-                                                                              // reply_msg = format!("React to this message to also be reminded.");
+                    reply_msg = format!("{} seconds", n);
                     n
                 }
                 "m" | "minute" | "minutes" | "min" | "mins" => {
-                    reply_msg = format!("Will remind you in {} minutes.", n);
+                    reply_msg = format!("{} minutes", n);
                     n * 60
                 }
                 "h" | "hour" | "hours" | "hr" | "hrs" => {
-                    reply_msg = format!("Will remind you in {} hours.", n);
+                    reply_msg = format!("{} hours", n);
                     n * 60 * 60
                 }
                 _ => {
-                    reply_msg = format!("Will remind you in {} minutes.", n);
+                    reply_msg = format!("{} minutes", n);
                     n * 60
                 }
             }
@@ -82,9 +81,16 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
         Err(e) => 0,
     };
 
-    msg.channel_id.say(&ctx.http, &reply_msg)?;
+    msg.channel_id.say(
+        &ctx.http,
+        format!(
+            "Reminder will be DMed in {}. React with 👀 to also be reminded.",
+            &reply_msg
+        ),
+    )?;
 
     if time_to_wait_in_seconds > 0 {
+        let _ = msg.react(&ctx, '👀');
         let mut msg_url = String::from("Url not found");
         if msg.is_private() {
             msg_url = format!(
@@ -92,26 +98,36 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
                 msg.channel_id, msg.id
             );
         } else {
-            format!(
+            msg_url = format!(
                 "http://discordapp.com/channels/{}/{}/{}",
                 msg.guild_id.unwrap(),
                 msg.channel_id,
                 msg.id
             );
         }
-        let remind_msg = format!(
-            "Reminder <@{}>: {} \n for message {}",
-            &msg.author.id,
-            args.rest(),
-            &msg_url
-        );
+        let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
+        // let remind_msg = format!(
+        //     "Reminder <@{}>: {} \nLink: {}",
+        //     &msg.author.id,
+        //     args.rest(),
+        //     &msg_url
+        // );
 
         thread::sleep(std::time::Duration::new(time_to_wait_in_seconds as u64, 0));
 
-        if let Err(err) = msg.channel_id.say(&ctx.http, remind_msg) {
-            // This should be replaced with a Direct Message
-            println!("Error giving message: {:?}", err);
-        }
+        let dm = msg.author.direct_message(&ctx, |m| m.content(remind_msg));
+
+        match dm {
+            Ok(_) => {
+                let _ = msg.react(&ctx, '✅');
+                // let _ = msg.react(&ctx, '👌');
+            }
+            Err(why) => {
+                // println!("Err sending help: {:?}", why);
+
+                // let _ = msg.reply(&ctx, "There was an error DMing you help.");
+            }
+        };
     }
 
     Ok(())

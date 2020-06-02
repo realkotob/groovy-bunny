@@ -10,9 +10,12 @@ pub struct Handler;
 
 impl EventHandler for Handler {
     fn reaction_add(&self, ctx: Context, reaction: Reaction) {
-        if let Err(why) = reaction.channel_id.say(
-            &ctx.http,
-            format!(
+        if reaction.message(&ctx.http).unwrap().author.bot {
+            println!("Bot made a reaction");
+        } else {
+            // if let Err(why) = reaction.channel_id.say(
+            //     &ctx.http,
+            println!(
                 "{} left a {} reaction ",
                 reaction.user(&ctx).unwrap().name,
                 match reaction.emoji {
@@ -24,9 +27,10 @@ impl EventHandler for Handler {
                     ReactionType::Unicode(uni) => uni,
                     ReactionType::__Nonexhaustive => String::from("Unknown"),
                 }
-            ),
-        ) {
-            println!("Error reacting to a reaction: {:?}", why);
+            );
+            // ) {
+            //     println!("Error reacting to a reaction: {:?}", why);
+            // }
         }
     }
     fn message(&self, ctx: Context, _new_message: Message) {
