@@ -1,3 +1,5 @@
+use super::parse_time;
+
 use serenity::{
     model::{
         channel::{Message, Reaction, ReactionType},
@@ -22,40 +24,45 @@ impl EventHandler for Handler {
             ReactionType::Unicode(uni) => match uni.as_ref() {
                 "👀" => {
                     let message_content = &reaction_msg.content;
-                    // let msg_args: Vec<&str> = message_content.split_whitespace().collect();
+                    let msg_args: Vec<&str> = message_content.split_whitespace().collect();
                     let mut msg_url = String::from("Url not found");
                     println!(
                         "Msg author {} reaction user {}",
                         reaction_msg.author.id, reaction.user_id
                     );
 
-                    if reaction_msg.author.id == reaction.user_id
-                        || reaction.user(&ctx).unwrap().bot
-                    {
-                        println!("Same user slash bot cannot use :eyes: emoji.");
-                    } else {
-                        println!("Start processing :eyes: emoji.");
-
-                        if reaction_msg.is_private() {
-                            msg_url = format!(
-                                "http://discordapp.com/channels/@me/{}/{}",
-                                reaction_msg.channel_id, reaction_msg.id
-                            );
+                    if msg_args.len() > 0 && msg_args[0] == "!remindme" {
+                        let (_command, date_args) = msg_args.split_at(1);
+                        // let (reply_msg, time_to_wait_in_seconds, used_args) =
+                        //     parse_time::parse_for_wait_time(date_args);
+                        if reaction_msg.author.id == reaction.user_id
+                            || reaction.user(&ctx).unwrap().bot
+                        {
+                            println!("Same user slash bot cannot use :eyes: emoji.");
                         } else {
-                            msg_url = format!(
-                                "http://discordapp.com/channels/{}/{}/{}",
-                                reaction_msg.guild_id.unwrap(),
-                                reaction_msg.channel_id,
-                                reaction_msg.id
-                            );
+                            println!("Start processing :eyes: emoji.");
+
+                            if reaction_msg.is_private() {
+                                msg_url = format!(
+                                    "http://discordapp.com/channels/@me/{}/{}",
+                                    reaction_msg.channel_id, reaction_msg.id
+                                );
+                            } else {
+                                msg_url = format!(
+                                    "http://discordapp.com/channels/{}/{}/{}",
+                                    reaction_msg.guild_id.unwrap(),
+                                    reaction_msg.channel_id,
+                                    reaction_msg.id
+                                );
+                            }
+                            // let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
+                            let remind_msg = format!("Reminder for link: {}", &msg_url);
+                            println!("Requested reminder through :eyes: emoji.");
+                            let dm = &reaction
+                                .user(&ctx)
+                                .unwrap()
+                                .direct_message(&ctx.http, |m| m.content(remind_msg));
                         }
-                        // let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
-                        let remind_msg = format!("Reminder for link: {}", &msg_url);
-                        println!("Requested reminder through :eyes: emoji.");
-                        let dm = &reaction
-                            .user(&ctx)
-                            .unwrap()
-                            .direct_message(&ctx.http, |m| m.content(remind_msg));
                     }
                     ()
                 }
@@ -78,7 +85,13 @@ impl EventHandler for Handler {
             }
         }
     }
-    fn ready(&self, _ctx: Context, ready: Ready) {
+    fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is ready", ready.user.name);
+
+        use serenity::model::gateway::Activity;
+
+        ctx.set_activity(Activity::playing(&String::from(
+            "Oh dear! I shall be too late!",
+        )));
     }
 }

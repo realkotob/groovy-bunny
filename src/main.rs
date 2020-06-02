@@ -1,4 +1,5 @@
 mod events;
+mod parse_time;
 
 use events::Handler;
 use serenity::framework::standard::Args;
@@ -53,59 +54,21 @@ fn help(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
 fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     use std::thread;
 
-    let first_arg = args.single::<String>().unwrap();
-    let mut reply_msg: String = String::from("Failed to parse date.");
+    let (reply_msg, time_to_wait_in_seconds, used_args) =
+        parse_time::parse_for_wait_time(args.raw().collect::<Vec<&str>>());
 
-    let time_to_wait_in_seconds = match first_arg.parse::<i32>() {
-        Ok(n) => {
-            let second_arg = args.single::<String>().unwrap();
-            match second_arg.as_ref() {
-                "s" | "second" | "seconds" | "sec" | "secs" => {
-                    reply_msg = format!("{} seconds", n);
-                    n
-                }
-                "m" | "minute" | "minutes" | "min" | "mins" => {
-                    reply_msg = format!("{} minutes", n);
-                    n * 60
-                }
-                "h" | "hour" | "hours" | "hr" | "hrs" => {
-                    reply_msg = format!("{} hours", n);
-                    n * 60 * 60
-                }
-                "d" | "day" | "days" => {
-                    reply_msg = format!("{} days", n);
-                    n * 60 * 60 * 24
-                }
-                "w" | "week" | "weeks" => {
-                    reply_msg = format!("{} days", n);
-                    n * 60 * 60 * 24 * 7
-                }
-                "month" | "months" => {
-                    reply_msg = format!("{} days", n);
-                    n * 60 * 60 * 24 * 7 * 4
-                }
-                "y" | "year" | "years" => {
-                    reply_msg = format!("{} days", n);
-                    n * 60 * 60 * 24 * 7 * 4 * 12
-                }
-                _ => {
-                    reply_msg = format!("{} minutes", n);
-                    n * 60
-                }
-            }
-        }
-        Err(e) => 0,
-    };
-
-    msg.channel_id.say(
-        &ctx.http,
-        format!(
-            "Reminder will be DMed in {}. React with 👀 to also be reminded.",
-            &reply_msg
-        ),
-    )?;
+    for _ in 0..used_args {
+        args.advance();
+    }
 
     if time_to_wait_in_seconds > 0 {
+        msg.channel_id.say(
+            &ctx.http,
+            format!(
+                "Reminder will be DMed in {}. React with 👀 to also be reminded.",
+                &reply_msg
+            ),
+        )?;
         let _ = msg.react(&ctx, '👀');
         let mut msg_url = String::from("Url not found");
         if msg.is_private() {
@@ -144,6 +107,8 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
                 // let _ = msg.reply(&ctx, "There was an error DMing you help.");
             }
         };
+    } else {
+        msg.channel_id.say(&ctx.http, format!("{}", &reply_msg))?;
     }
 
     Ok(())
