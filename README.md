@@ -1,5 +1,8 @@
-# White Rabbit
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<!-- # White Rabbit -->
+<!-- ![White Rabbit](media/sir_bunny.png? "White Rabbit logo") -->
+<img src="media/sir_bunny.png" alt="White Rabbit" height="100">
+
+<!-- [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) -->
 
 > Oh dear! Oh dear! I shall be too late!
 
