@@ -15,3 +15,18 @@ A bot to manage your calendar and schedule.
     * Other users on the channel can react to the message to subscribe to the reminder
     * Works both in private with the bot or inside a server
 * **Google Calendar** - Work in progress
+
+### RemindMe Syntax
+
+> !remindme <some_integer> <time_unit_string>
+
+e.g. !remindme 10 minutes Check the microwave
+
+More syntax options like "tomorrow at 12" or "next week at 4pm" is planned.
+
+## Development
+
+- Install Rust tools
+- Add your bot token to a `.token` file placed in the project directory
+- Run `cargo run` in the project directory
+

@@ -58,13 +58,9 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
         parse_time::parse_for_wait_time(0, args.raw().collect::<Vec<&str>>());
 
     for _ in 0..used_args {
+        // Consume the arguments that were processed above
         args.advance();
     }
-    use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
-    let time_offset = Utc::now()
-        .signed_duration_since(msg.timestamp)
-        .num_seconds();
-    println!("Time since message {}", time_offset);
 
     if time_to_wait_in_seconds > 0 {
         msg.channel_id.say(
@@ -90,6 +86,7 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             );
         }
         let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
+        //// Alternative way to mention player instead of `msg.reply`
         // let remind_msg = format!(
         //     "Reminder <@{}>: {} \nLink: {}",
         //     &msg.author.id,
@@ -107,7 +104,7 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
                 // let _ = msg.react(&ctx, '👌');
             }
             Err(why) => {
-                // println!("Err sending help: {:?}", why);
+                println!("Err sending DM: {:?}", why);
 
                 // let _ = msg.reply(&ctx, "There was an error DMing you help.");
             }
