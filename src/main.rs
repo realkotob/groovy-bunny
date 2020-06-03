@@ -55,7 +55,7 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     use std::thread;
 
     let (reply_msg, time_to_wait_in_seconds, used_args) =
-        parse_time::parse_for_wait_time(args.raw().collect::<Vec<&str>>());
+        parse_time::parse_for_wait_time(0, args.raw().collect::<Vec<&str>>());
 
     for _ in 0..used_args {
         args.advance();

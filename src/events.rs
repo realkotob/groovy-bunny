@@ -23,6 +23,8 @@ impl EventHandler for Handler {
         match &reaction.emoji {
             ReactionType::Unicode(uni) => match uni.as_ref() {
                 "👀" => {
+                    use std::thread;
+
                     let message_content = &reaction_msg.content;
                     let msg_args: Vec<&str> = message_content.split_whitespace().collect();
                     let mut msg_url = String::from("Url not found");
@@ -33,11 +35,12 @@ impl EventHandler for Handler {
 
                     if msg_args.len() > 0 && msg_args[0] == "!remindme" {
                         let (_command, date_args) = msg_args.split_at(1);
-                        // let (reply_msg, time_to_wait_in_seconds, used_args) =
-                        //     parse_time::parse_for_wait_time(date_args);
-                        if reaction_msg.author.id == reaction.user_id
-                            || reaction.user(&ctx).unwrap().bot
-                        {
+                        // let time_offset = reaction_msg;
+                        let (reply_msg, time_to_wait_in_seconds, used_args) =
+                            parse_time::parse_for_wait_time(0, Vec::from(date_args));
+                        // if reaction_msg.author.id == reaction.user_id
+                        //     || reaction.user(&ctx).unwrap().bot
+                        if false {
                             println!("Same user slash bot cannot use :eyes: emoji.");
                         } else {
                             println!("Start processing :eyes: emoji.");
@@ -58,6 +61,10 @@ impl EventHandler for Handler {
                             // let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
                             let remind_msg = format!("Reminder for link: {}", &msg_url);
                             println!("Requested reminder through :eyes: emoji.");
+                            thread::sleep(std::time::Duration::new(
+                                time_to_wait_in_seconds as u64,
+                                0,
+                            ));
                             let dm = &reaction
                                 .user(&ctx)
                                 .unwrap()
