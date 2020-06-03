@@ -48,6 +48,11 @@ impl EventHandler for Handler {
                             || reaction.user(&ctx).unwrap().bot
                         {
                             println!("Bots and original user cannot be reminded with reaction.");
+                        } else if time_to_wait_in_seconds <= 0 {
+                            let dm_confirm =
+                                reaction.user(&ctx).unwrap().direct_message(&ctx, |m| {
+                                    m.content(format!("Reminder already passed."))
+                                });
                         } else {
                             if reaction_msg.is_private() {
                                 msg_url = format!(
@@ -65,6 +70,12 @@ impl EventHandler for Handler {
                             // TODO Add rest of the arguments to the message
                             let remind_msg = format!("Reminder for link: {}", &msg_url);
                             println!("Requested reminder through :eyes: emoji.");
+                            let dm_confirm = reaction.user(&ctx).unwrap().direct_message(&ctx, |m| {
+                                m.content(format!(
+                                    "Reminder will be DMed in {} from original message date. Others can react with 👀 to also be reminded.",
+                                    &reply_msg
+                                ))
+                            });
                             thread::sleep(std::time::Duration::new(
                                 time_to_wait_in_seconds as u64,
                                 0,

@@ -63,13 +63,12 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     if time_to_wait_in_seconds > 0 {
-        msg.channel_id.say(
-            &ctx.http,
-            format!(
-                "Reminder will be DMed in {}. React with 👀 to also be reminded.",
+       let dm_confirm =  msg.author.direct_message(&ctx, |m| {
+            m.content(format!(
+                "Reminder will be DMed in {}. Others can react with 👀 to also be reminded.",
                 &reply_msg
-            ),
-        )?;
+            ))
+        });
         let _ = msg.react(&ctx, '👀');
         let mut msg_url = String::from("Url not found");
         if msg.is_private() {
@@ -96,9 +95,9 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
 
         thread::sleep(std::time::Duration::new(time_to_wait_in_seconds as u64, 0));
 
-        let dm = msg.author.direct_message(&ctx, |m| m.content(remind_msg));
+        let dm_reminder = msg.author.direct_message(&ctx, |m| m.content(remind_msg));
 
-        match dm {
+        match dm_reminder {
             Ok(_) => {
                 let _ = msg.react(&ctx, '✅');
                 // let _ = msg.react(&ctx, '👌');
