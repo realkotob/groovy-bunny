@@ -1348,6 +1348,7 @@ dependencies = [
 name = "white_rabbit"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "serenity",
 ]
 

@@ -60,6 +60,11 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     for _ in 0..used_args {
         args.advance();
     }
+    use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+    let time_offset = Utc::now()
+        .signed_duration_since(msg.timestamp)
+        .num_seconds();
+    println!("Time since message {}", time_offset);
 
     if time_to_wait_in_seconds > 0 {
         msg.channel_id.say(

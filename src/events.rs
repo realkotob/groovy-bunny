@@ -36,11 +36,19 @@ impl EventHandler for Handler {
                     if msg_args.len() > 0 && msg_args[0] == "!remindme" {
                         let (_command, date_args) = msg_args.split_at(1);
                         // let time_offset = reaction_msg;
+                        use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+                        let time_offset = Utc::now()
+                            .signed_duration_since(reaction_msg.timestamp)
+                            .num_seconds();
+                        println!("Time since message {}", time_offset);
                         let (reply_msg, time_to_wait_in_seconds, used_args) =
-                            parse_time::parse_for_wait_time(0, Vec::from(date_args));
-                        // if reaction_msg.author.id == reaction.user_id
-                        //     || reaction.user(&ctx).unwrap().bot
-                        if false {
+                            parse_time::parse_for_wait_time(
+                                time_offset as i32,
+                                Vec::from(date_args),
+                            );
+                        if reaction_msg.author.id == reaction.user_id
+                            || reaction.user(&ctx).unwrap().bot
+                        {
                             println!("Same user slash bot cannot use :eyes: emoji.");
                         } else {
                             println!("Start processing :eyes: emoji.");
