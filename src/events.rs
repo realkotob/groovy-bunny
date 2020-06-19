@@ -1,4 +1,6 @@
 use super::parse_time;
+use super::storage;
+use chrono::Utc;
 
 use serenity::{
     model::{
@@ -9,6 +11,7 @@ use serenity::{
 };
 
 pub struct Handler;
+pub struct HandlerEmpty;
 
 fn split_once(in_string: &str) -> (&str, &str) {
     let mut splitter = in_string.splitn(2, ':');
@@ -16,6 +19,8 @@ fn split_once(in_string: &str) -> (&str, &str) {
     let second = splitter.next().unwrap();
     (first, second)
 }
+
+impl EventHandler for HandlerEmpty {}
 
 impl EventHandler for Handler {
     fn reaction_add(&self, ctx: Context, mut reaction: Reaction) {
@@ -35,7 +40,6 @@ impl EventHandler for Handler {
 
                     if msg_args.len() > 0 && msg_args[0] == "!remindme" {
                         let (_command, date_args) = msg_args.split_at(1);
-                        use chrono::Utc;
                         let time_since_message = Utc::now()
                             .signed_duration_since(reaction_msg.timestamp)
                             .num_seconds();
@@ -76,6 +80,13 @@ impl EventHandler for Handler {
                                     &reply_msg
                                 ))
                             });
+                            let user_id = &reaction.user(&ctx).unwrap().id.0;
+                            storage::save_reminder(
+                                reaction_msg.timestamp.timestamp(),
+                                time_to_wait_in_seconds,
+                                *user_id,
+                                remind_msg,
+                            );
                             thread::sleep(std::time::Duration::new(
                                 time_to_wait_in_seconds as u64,
                                 0,
@@ -123,5 +134,7 @@ impl EventHandler for Handler {
         ctx.set_activity(Activity::playing(&String::from(
             "Oh dear! I shall be too late!",
         )));
+
+        storage::load_reminders(ctx);
     }
 }

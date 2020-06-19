@@ -1031,6 +1031,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "task_scheduler"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "023ced5b7293f7d605c6542c8f4710d9fa57be380de83f3195d73c9c3438fba7"
+
+[[package]]
 name = "threadpool"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1349,7 +1355,9 @@ name = "white_rabbit"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "parking_lot",
  "serenity",
+ "task_scheduler",
 ]
 
 [[package]]

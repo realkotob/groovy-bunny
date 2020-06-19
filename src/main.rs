@@ -1,16 +1,20 @@
 mod events;
 mod parse_time;
+mod storage;
 
 use events::Handler;
-use serenity::framework::standard::Args;
 
-use serenity::client::Client;
-use serenity::framework::standard::{
-    macros::{command, group},
-    CommandResult, StandardFramework,
+use serenity::{
+    client::Client,
+    framework::standard::Args,
+    framework::standard::{
+        macros::{command, group},
+        CommandResult, StandardFramework,
+    },
+    http::Http,
+    model::channel::Message,
+    prelude::{Context, EventHandler},
 };
-use serenity::model::channel::Message;
-use serenity::prelude::{Context, EventHandler};
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -34,6 +38,7 @@ fn main() {
     if let Err(msg) = client.start() {
         println!("Error: {:?}", msg);
     }
+
 }
 
 #[command]
@@ -54,8 +59,10 @@ fn help(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
 fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     use std::thread;
 
+    let args_list = args.raw().collect::<Vec<&str>>();
+
     let (reply_msg, time_to_wait_in_seconds, used_args) =
-        parse_time::parse_for_wait_time(0, args.raw().collect::<Vec<&str>>());
+        parse_time::parse_for_wait_time(0, args_list);
 
     for _ in 0..used_args {
         // Consume the arguments that were processed above
@@ -63,12 +70,16 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     if time_to_wait_in_seconds > 0 {
-       let dm_confirm =  msg.author.direct_message(&ctx, |m| {
+        let message_stamp = msg.timestamp.timestamp();
+        let user_id = msg.author.id.0;
+
+        let dm_confirm = msg.author.direct_message(&ctx, |m| {
             m.content(format!(
                 "Reminder will be DMed in {}. Others can react with 👀 to also be reminded.",
                 &reply_msg
             ))
         });
+
         let _ = msg.react(&ctx, '👀');
         let mut msg_url = String::from("Url not found");
         if msg.is_private() {
@@ -85,6 +96,8 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             );
         }
         let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
+        storage::save_reminder(message_stamp, time_to_wait_in_seconds, user_id, remind_msg.to_string());
+
         //// Alternative way to mention player instead of `msg.reply`
         // let remind_msg = format!(
         //     "Reminder <@{}>: {} \nLink: {}",
@@ -96,6 +109,10 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
         thread::sleep(std::time::Duration::new(time_to_wait_in_seconds as u64, 0));
 
         let dm_reminder = msg.author.direct_message(&ctx, |m| m.content(remind_msg));
+        // let dm_reminder = ctx
+        //     .http
+        //     .get_user(user_id)?
+        //     .direct_message(&ctx, |m| m.content(remind_msg));
 
         match dm_reminder {
             Ok(_) => {

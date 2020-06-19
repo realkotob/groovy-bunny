@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 chrono = "0.4"
 serenity = "0.8"
+task_scheduler = "0.2"
+parking_lot = "0.9"
