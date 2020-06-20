@@ -31,9 +31,15 @@ pub fn save_reminder(
 
     println!("* Save entry --> {}", save_entry);
 
+    let path = "data.txt";
+
+    if (!fs::metadata(path).is_ok()) {
+        File::create(path).expect("Storage create failed.");
+    }
+
     let mut file = OpenOptions::new()
         .append(true)
-        .open("data.txt")
+        .open(path)
         .expect("cannot open file");
 
     file.write_all(save_entry.as_bytes())
@@ -42,14 +48,15 @@ pub fn save_reminder(
     Ok(())
 }
 
-pub fn load_reminders(client: Client) -> Result<(), Error> {
+pub fn load_reminders(ctx: Context) -> Result<(), Error> {
     println!("* Try load reminders list.");
     use chrono::prelude::*;
     let path = "data.txt";
     use std::sync::{Arc, Mutex};
 
-    let http = Arc::new(Mutex::new(&client.cache_and_http.http));
-    let client = Arc::new(Mutex::new(&client));
+    // let http = Arc::new(Mutex::new(&client.cache_and_http.http));
+    // let client = Arc::new(Mutex::new(&client));
+    let ctx = Arc::new(Mutex::new(ctx));
 
     if (fs::metadata(path).is_ok()) {
         let mut file = File::open(path).expect("File open failed");
@@ -63,8 +70,8 @@ pub fn load_reminders(client: Client) -> Result<(), Error> {
         File::create(path).expect("Storage create failed.");
 
         for rem in split_args {
-            let cloned_client = Arc::clone(&client);
-            let cloned_http = Arc::clone(&http);
+            let cloned_ctx = Arc::clone(&ctx);
+            // let cloned_http = Arc::clone(&http);
 
             if (rem.len() > 8) {
                 // println!("Loaded reminder {}", &rem.as_str());
@@ -82,7 +89,7 @@ pub fn load_reminders(client: Client) -> Result<(), Error> {
 
                 let time_since_message = Utc::now().signed_duration_since(datetime).num_seconds();
 
-                // println!("Maybe remind user {} about {}", user_id, remind_msg);
+                println!("Maybe remind user {} about {}", user_id, remind_msg);
 
                 if (time_since_message < time_to_wait_in_seconds) {
                     let final_time_wait = (time_to_wait_in_seconds - time_since_message) as u64;
@@ -116,20 +123,24 @@ pub fn load_reminders(client: Client) -> Result<(), Error> {
 
                             // client.start().expect("Could not start client.");
 
-                            // let new_http = Http::new_with_token(token.as_str());
-                            // let new_http = cloned_client.lock().unwrap().cache_and_http.http; <<- This
+                            let new_http = Http::new_with_token(token.as_str());
+                            // let new_http = cloned_client.lock().unwrap();//.cache_and_http.http;
                             // let new_http = http.lock().unwrap();
-                            // new_http
-                            //     .get_upcoming_maintenances()
-                            //     .expect("Failed to fetch upcoming maintenance");
+                            let maintenances = new_http
+                                .get_upcoming_maintenances()
+                                .expect("Failed to fetch upcoming maintenance");
+                            println!("Maintenances {:?}", maintenances);
 
-                            // let unlocked_ctx = cloned_ctx.lock().unwrap();
+                            let unlocked_ctx = &*cloned_ctx.lock().unwrap();
                             // let newer_http = Arc::new(Mutex::new(&new_http));
-                            // let dm_reminder = new_http
-                            //     .get_user(user_id)
-                            //     .expect("Failed to retrieve user from id")
-                            //     // .direct_message((&cache_lock, &new_http), move |m| {
-                            //     .direct_message(new_http, move |m| m.content(remind_msg));
+                            // let dm_reminder = new_http.
+                            let remind_msg = remind_msg.replace("/n", "\n");
+                            let dm_reminder = unlocked_ctx
+                                .http
+                                .get_user(user_id)
+                                .expect("Failed to retrieve user from id")
+                                // .direct_message((&cache_lock, &new_http), move |m| {
+                                .direct_message(unlocked_ctx, move |m| m.content(remind_msg));
                         });
                         // thread::sleep(std::time::Duration::new(final_time_wait, 0));
                     }

@@ -134,5 +134,7 @@ impl EventHandler for Handler {
         ctx.set_activity(Activity::playing(&String::from(
             "Oh dear! I shall be too late!",
         )));
+
+        storage::load_reminders(ctx);
     }
 }

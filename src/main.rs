@@ -39,7 +39,6 @@ fn main() {
         println!("Error: {:?}", msg);
     }
 
-    storage::load_reminders(client);
 
 }
 
