@@ -1,6 +1,6 @@
-<!-- # White Rabbit -->
-<!-- ![White Rabbit](media/sir_bunny.png? "White Rabbit logo") -->
-<img src="media/sir_bunny.png" alt="White Rabbit" height="100">
+<!-- # Chrono Rabbit -->
+<!-- ![Chrono Rabbit](media/sir_bunny.png? "Chrono Rabbit logo") -->
+<img src="media/sir_bunny.png" alt="Chrono Rabbit" height="100">
 
 <!-- [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) -->
 

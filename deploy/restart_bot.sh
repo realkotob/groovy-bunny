@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BOT_NAME=white_rabbit
+BOT_NAME=chrono_rabbit
 
 git pull origin; 
 cargo build --release; 

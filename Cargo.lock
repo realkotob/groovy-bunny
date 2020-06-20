@@ -119,6 +119,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "chrono_rabbit"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "parking_lot",
+ "serenity",
+ "task_scheduler",
+]
+
+[[package]]
 name = "cloudabi"
 version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1348,16 +1358,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8eff4b7516a57307f9349c64bf34caa34b940b66fed4b2fb3136cb7386e5739"
 dependencies = [
  "webpki",
-]
-
-[[package]]
-name = "white_rabbit"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "parking_lot",
- "serenity",
- "task_scheduler",
 ]
 
 [[package]]

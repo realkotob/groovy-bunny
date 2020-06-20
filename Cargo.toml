@@ -1,5 +1,5 @@
 [package]
-name = "white_rabbit"
+name = "chrono_rabbit"
 version = "0.1.0"
 authors = ["asheraryam <asheraryam@gmail.com>"]
 edition = "2018"
