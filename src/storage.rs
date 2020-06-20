@@ -2,13 +2,13 @@ extern crate task_scheduler;
 
 use super::parse_time;
 use chrono::Utc;
-// use serenity::client::Client;
+use serenity::client::Client;
 use serenity::prelude::Context;
 use std::fs;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{BufRead, BufReader, Error, Read, Write};
-// use std::thread;
+use std::thread;
 use std::time::Duration;
 use task_scheduler::Scheduler;
 
@@ -42,14 +42,14 @@ pub fn save_reminder(
     Ok(())
 }
 
-pub fn load_reminders(ctx: Context) -> Result<(), Error> {
+pub fn load_reminders(client: Client) -> Result<(), Error> {
     println!("* Try load reminders list.");
     use chrono::prelude::*;
     let path = "data.txt";
-    // use std::sync::{Arc, Mutex};
+    use std::sync::{Arc, Mutex};
 
-    // let http_ctx = Arc::new(Mutex::new(&ctx));
-    // let ctx = Arc::new(Mutex::new(ctx));
+    let http = Arc::new(Mutex::new(&client.cache_and_http.http));
+    let client = Arc::new(Mutex::new(&client));
 
     if (fs::metadata(path).is_ok()) {
         let mut file = File::open(path).expect("File open failed");
@@ -63,8 +63,8 @@ pub fn load_reminders(ctx: Context) -> Result<(), Error> {
         File::create(path).expect("Storage create failed.");
 
         for rem in split_args {
-            // let cloned_ctx = Arc::clone(&ctx);
-            // let cloned_http_ctx = Arc::clone(&http_ctx);
+            let cloned_client = Arc::clone(&client);
+            let cloned_http = Arc::clone(&http);
 
             if (rem.len() > 8) {
                 // println!("Loaded reminder {}", &rem.as_str());
@@ -93,36 +93,43 @@ pub fn load_reminders(ctx: Context) -> Result<(), Error> {
                             user_id,
                             remind_msg.to_string(),
                         );
+                        // thread::spawn(move || {
                         scheduler.after_duration(Duration::from_secs(final_time_wait), move || {
                             println!("Remind user {} about {}", user_id, remind_msg);
 
-                            // use super::events::HandlerEmpty;
-                            // use serenity::http::Http;
-                            // let mut file = File::open(".token").unwrap();
-                            // let mut token = String::new();
-                            // file.read_to_string(&mut token)
-                            //     .expect("Token could not be read");
-                            // let new_http = Http::new_with_token(token.as_str());
-                            // use parking_lot::RawRwLock;
-                            // use parking_lot::RwLock;
-                            // use serenity::cache::Cache;
-                            // use serenity::cache::CacheRwLock;
+                            use super::events::HandlerEmpty;
+                            use serenity::http::Http;
+                            let mut file = File::open(".token").expect("Error opening token file");
+                            let mut token = String::new();
+                            file.read_to_string(&mut token)
+                                .expect("Token could not be read");
+                            use parking_lot::RawRwLock;
+                            use parking_lot::RwLock;
+                            use serenity::cache::Cache;
+                            use serenity::cache::CacheRwLock;
 
-                            // let lock = RwLock::new(Cache::new());
-                            // let rawlock = RawRwLock::new(Cache::new());
-                            // let cache_lock = CacheRwLock::from(Arc::new(lock));
+                            let rwlock = RwLock::new(Cache::new());
+                            let cache_lock = CacheRwLock::from(Arc::new(rwlock));
 
                             // let mut client =
                             //     Client::new(&token, HandlerEmpty).expect("Error creating client");
+
+                            // client.start().expect("Could not start client.");
+
+                            // let new_http = Http::new_with_token(token.as_str());
+                            // let new_http = cloned_client.lock().unwrap().cache_and_http.http; <<- This
+                            // let new_http = http.lock().unwrap();
+                            // new_http
+                            //     .get_upcoming_maintenances()
+                            //     .expect("Failed to fetch upcoming maintenance");
+
                             // let unlocked_ctx = cloned_ctx.lock().unwrap();
-                            // let unlocked_http_ctx = cloned_http_ctx.lock().unwrap();
-                            // let dm_reminder = unlocked_ctx
-                            //     .http
+                            // let newer_http = Arc::new(Mutex::new(&new_http));
+                            // let dm_reminder = new_http
                             //     .get_user(user_id)
-                            //     .unwrap()
-                            //     .direct_message((&cache_lock, &new_http), |m| {
-                            //         m.content(remind_msg)
-                            //     });
+                            //     .expect("Failed to retrieve user from id")
+                            //     // .direct_message((&cache_lock, &new_http), move |m| {
+                            //     .direct_message(new_http, move |m| m.content(remind_msg));
                         });
                         // thread::sleep(std::time::Duration::new(final_time_wait, 0));
                     }

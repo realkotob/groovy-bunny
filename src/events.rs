@@ -85,7 +85,7 @@ impl EventHandler for Handler {
                                 reaction_msg.timestamp.timestamp(),
                                 time_to_wait_in_seconds,
                                 *user_id,
-                                remind_msg,
+                                remind_msg.to_string(),
                             );
                             thread::sleep(std::time::Duration::new(
                                 time_to_wait_in_seconds as u64,
@@ -134,7 +134,5 @@ impl EventHandler for Handler {
         ctx.set_activity(Activity::playing(&String::from(
             "Oh dear! I shall be too late!",
         )));
-
-        storage::load_reminders(ctx);
     }
 }
