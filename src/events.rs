@@ -40,6 +40,7 @@ impl EventHandler for Handler {
 
                     if msg_args.len() > 0 && msg_args[0] == "!remindme" {
                         let (_command, date_args) = msg_args.split_at(1);
+
                         let time_since_message = Utc::now()
                             .signed_duration_since(reaction_msg.timestamp)
                             .num_seconds();
@@ -47,6 +48,7 @@ impl EventHandler for Handler {
                             parse_time::parse_for_wait_time(
                                 time_since_message as i32,
                                 Vec::from(date_args),
+                               
                             );
                         if reaction_msg.author.id == reaction.user_id
                             || reaction.user(&ctx).unwrap().bot

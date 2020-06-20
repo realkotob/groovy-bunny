@@ -38,8 +38,6 @@ fn main() {
     if let Err(msg) = client.start() {
         println!("Error: {:?}", msg);
     }
-
-
 }
 
 #[command]
@@ -58,12 +56,17 @@ fn help(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
 
 #[command]
 fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
+    use chrono::Utc;
     use std::thread;
 
     let args_list = args.raw().collect::<Vec<&str>>();
 
+    let time_since_message = Utc::now()
+        .signed_duration_since(msg.timestamp)
+        .num_seconds();
+
     let (reply_msg, time_to_wait_in_seconds, used_args) =
-        parse_time::parse_for_wait_time(0, args_list);
+        parse_time::parse_for_wait_time(time_since_message as i32, args_list);
 
     for _ in 0..used_args {
         // Consume the arguments that were processed above
@@ -71,19 +74,24 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     if time_to_wait_in_seconds > 0 {
+        let msg_private = msg.is_private();
+
         let message_stamp = msg.timestamp.timestamp();
         let user_id = msg.author.id.0;
 
         let dm_confirm = msg.author.direct_message(&ctx, |m| {
-            m.content(format!(
-                "Reminder will be DMed in {}. Others can react with 👀 to also be reminded.",
-                &reply_msg
-            ))
+            m.content(format!("Reminder will be DMed in {}.{}", &reply_msg, {
+                if (!msg_private) {
+                    " Others can react with 👀 to also be reminded."
+                } else {
+                    ""
+                }
+            }))
         });
 
         let _ = msg.react(&ctx, '👀');
         let mut msg_url = String::from("Url not found");
-        if msg.is_private() {
+        if msg_private {
             msg_url = format!(
                 "http://discordapp.com/channels/@me/{}/{}",
                 msg.channel_id, msg.id
@@ -97,7 +105,12 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             );
         }
         let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
-        storage::save_reminder(message_stamp, time_to_wait_in_seconds, user_id, remind_msg.to_string());
+        storage::save_reminder(
+            message_stamp,
+            time_to_wait_in_seconds,
+            user_id,
+            remind_msg.to_string(),
+        )?;
 
         //// Alternative way to mention player instead of `msg.reply`
         // let remind_msg = format!(

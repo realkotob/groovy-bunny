@@ -31,8 +31,9 @@ pub fn save_reminder(
 
     println!("* Save entry --> {}", save_entry);
 
-    let path = "data.txt";
+    let path = "cache/data.txt";
 
+    fs::create_dir_all("cache").expect("Error creating cache folder");
     if (!fs::metadata(path).is_ok()) {
         File::create(path).expect("Storage create failed.");
     }
@@ -51,11 +52,9 @@ pub fn save_reminder(
 pub fn load_reminders(ctx: Context) -> Result<(), Error> {
     println!("* Try load reminders list.");
     use chrono::prelude::*;
-    let path = "data.txt";
+    let path = "cache/data.txt";
     use std::sync::{Arc, Mutex};
 
-    // let http = Arc::new(Mutex::new(&client.cache_and_http.http));
-    // let client = Arc::new(Mutex::new(&client));
     let ctx = Arc::new(Mutex::new(ctx));
 
     if (fs::metadata(path).is_ok()) {
@@ -71,7 +70,6 @@ pub fn load_reminders(ctx: Context) -> Result<(), Error> {
 
         for rem in split_args {
             let cloned_ctx = Arc::clone(&ctx);
-            // let cloned_http = Arc::clone(&http);
 
             if (rem.len() > 8) {
                 // println!("Loaded reminder {}", &rem.as_str());
@@ -89,7 +87,7 @@ pub fn load_reminders(ctx: Context) -> Result<(), Error> {
 
                 let time_since_message = Utc::now().signed_duration_since(datetime).num_seconds();
 
-                println!("Maybe remind user {} about {}", user_id, remind_msg);
+                // println!("Maybe remind user {} about {}", user_id, remind_msg);
 
                 if (time_since_message < time_to_wait_in_seconds) {
                     let final_time_wait = (time_to_wait_in_seconds - time_since_message) as u64;
@@ -99,55 +97,30 @@ pub fn load_reminders(ctx: Context) -> Result<(), Error> {
                             time_to_wait_in_seconds as i32,
                             user_id,
                             remind_msg.to_string(),
-                        );
-                        // thread::spawn(move || {
+                        )?;
                         scheduler.after_duration(Duration::from_secs(final_time_wait), move || {
                             println!("Remind user {} about {}", user_id, remind_msg);
 
-                            use super::events::HandlerEmpty;
-                            use serenity::http::Http;
                             let mut file = File::open(".token").expect("Error opening token file");
                             let mut token = String::new();
                             file.read_to_string(&mut token)
                                 .expect("Token could not be read");
-                            use parking_lot::RawRwLock;
-                            use parking_lot::RwLock;
-                            use serenity::cache::Cache;
-                            use serenity::cache::CacheRwLock;
-
-                            let rwlock = RwLock::new(Cache::new());
-                            let cache_lock = CacheRwLock::from(Arc::new(rwlock));
-
-                            // let mut client =
-                            //     Client::new(&token, HandlerEmpty).expect("Error creating client");
-
-                            // client.start().expect("Could not start client.");
-
-                            let new_http = Http::new_with_token(token.as_str());
-                            // let new_http = cloned_client.lock().unwrap();//.cache_and_http.http;
-                            // let new_http = http.lock().unwrap();
-                            let maintenances = new_http
-                                .get_upcoming_maintenances()
-                                .expect("Failed to fetch upcoming maintenance");
-                            println!("Maintenances {:?}", maintenances);
 
                             let unlocked_ctx = &*cloned_ctx.lock().unwrap();
-                            // let newer_http = Arc::new(Mutex::new(&new_http));
-                            // let dm_reminder = new_http.
                             let remind_msg = remind_msg.replace("/n", "\n");
                             let dm_reminder = unlocked_ctx
                                 .http
                                 .get_user(user_id)
                                 .expect("Failed to retrieve user from id")
-                                // .direct_message((&cache_lock, &new_http), move |m| {
                                 .direct_message(unlocked_ctx, move |m| m.content(remind_msg));
                         });
-                        // thread::sleep(std::time::Duration::new(final_time_wait, 0));
                     }
                 }
             }
         }
     } else {
+        fs::create_dir_all("cache").expect("Error creating cache folder");
+
         File::create(path).expect("Storage create failed.");
     }
 
