@@ -1,3 +1,5 @@
+#[allow(unused_parens)]
+
 use super::parse_time;
 use super::storage;
 use chrono::Utc;
@@ -132,11 +134,84 @@ impl EventHandler for Handler {
         println!("{} is ready", ready.user.name);
 
         use serenity::model::gateway::Activity;
+        use serenity::model::id::{ChannelId, MessageId};
 
         ctx.set_activity(Activity::playing(&String::from(
             "Oh dear! I shall be too late!",
         )));
+        
+        let channel_id = ChannelId(770656917415788545);
+        
+        let all_devs : Vec<u64> = vec![492385983833047051, 503494040436604930, 447503701733539845, 305360713893937162,]; // sam 669148598193225739
+        let mut did_speak = vec![];
+        let mut didnt_speak = vec![];
+        let _messages = channel_id.messages(&ctx.http, |retriever| { retriever});
+        let mut didnt_size :u64= 0 ;
+        let mut did_size :u64 = 0;
+        match _messages{
+            Ok(msgs)=>{
+                for dev in all_devs {
+                    let mut dev_spoke = false;
+                    for elem in &msgs {
+                        if (
+                            (&dev == elem.author.id.as_u64()) && (
+                              ( Utc::now().timestamp() - elem.timestamp.timestamp())  < 30) // week 604800
+                        ) {
+                            dev_spoke = true;
+                        };
+                    }
+                    if dev_spoke {
+                        did_speak.push(dev);
+                    }else{
+                        didnt_speak.push(dev);
+                    }
+                };
+                didnt_size = didnt_speak.len() as u64;
+                did_size = did_speak.len() as u64;
 
-        storage::load_reminders(ctx);
+            },
+            Err(_)=>{
+                println!("Failed to get messages.");
+            },
+        }
+        
+        let work_log_channel = ctx.http.get_channel(770656917415788545);
+        let mut msg_didnt_worklog = " didn't post in the past 30 seconds".to_string();
+        let mut msg_did_worklog = " posted in the past 30 seconds".to_string();
+        for elem in didnt_speak {
+            let str_mention = format!(" <@{}>", &elem.to_string());
+            msg_didnt_worklog = format!("{}{}", 
+            &str_mention, 
+            &msg_didnt_worklog).to_owned();
+        }
+        for elem in did_speak {
+            let str_mention = format!(" <@{}>", &elem.to_string());
+            msg_did_worklog = format!("{}{}", 
+            &str_mention, 
+            &msg_did_worklog);
+        }
+        match work_log_channel {
+            Ok(x) => {
+            match x.guild() {
+                Some(guild_lock) => {
+                    if( didnt_size> 0){
+                    guild_lock.read().say(&ctx.http,msg_didnt_worklog);
+                    }
+                    if(did_size > 0){
+                    guild_lock.read().say(&ctx.http,msg_did_worklog);
+                    }
+                    println!("guild!"); 
+                },
+                None => { println!("It's not a guild!"); 
+              },
+            };
+        },
+            Err(_) =>{ println!("Error sending message to channel 770656917415788545.");},
+        };
+        
+        match storage::load_reminders(ctx) {
+            Ok(x) => println!("Reminders loaded."),
+            Err(_) => println!("Error loading Reminders."),
+        };
     }
 }
