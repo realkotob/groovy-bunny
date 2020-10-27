@@ -1,8 +1,8 @@
 #!/bin/bash
 
-cd "$( dirname "${BASH_SOURCE[0]}" )"
+
+#cd "$( dirname "${BASH_SOURCE[0]}" )"
+cd /root/chrono-rabbit/
 
 git pull --rebase; 
-cargo build --release; 
-sudo pkill -kill $BOT_NAME;
-./target/release/$BOT_NAME & &> /dev/null; 
+cargo run --release &
