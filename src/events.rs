@@ -84,12 +84,17 @@ impl EventHandler for Handler {
                                 ))
                             });
                             let user_id = &reaction.user(&ctx).unwrap().id.0;
-                            storage::save_reminder(
+                            match storage::save_reminder(
                                 reaction_msg.timestamp.timestamp(),
                                 time_to_wait_in_seconds,
                                 *user_id,
                                 remind_msg.to_string(),
-                            );
+                            ) {
+                                Ok(_x) => {}
+                                Err(why) => {
+                                    println!("Error saving reminder {:?}", why);
+                                }
+                            };
                             thread::sleep(std::time::Duration::new(
                                 time_to_wait_in_seconds as u64,
                                 0,
@@ -137,22 +142,23 @@ impl EventHandler for Handler {
             "Oh dear! I shall be too late!",
         )));
 
+        // schedule_worklog(&ctx);
         extern crate job_scheduler;
         use job_scheduler::{Job, JobScheduler};
         use std::time::Duration;
         let mut sched = JobScheduler::new();
         let friday_noon = "0 0 12 * * FRI";
-        sched.add(Job::new("0 0 12 * * WED".parse().unwrap(), move || {
+        sched.add(Job::new("0 0 12 * * WED".parse().unwrap(), || {
             println!("check_work_log...");
             match check_work_log(&ctx) {
                 Ok(x) => println!("Checked worklog loaded."),
-                Err(_) => println!("Error checking worklog."),
+                Err(why) => println!("Error checking worklog {:?}", why),
             };
         }));
 
         // match storage::load_reminders(ctx) {
         //     Ok(x) => println!("Reminders loaded."),
-        //     Err(_) => println!("Error loading reminders."),
+        //     Err(why) => println!("Error loading reminders. {:?}", why),
         // };
 
         loop {
@@ -162,6 +168,8 @@ impl EventHandler for Handler {
         }
     }
 }
+
+fn schedule_worklog(ctx: &Context) {}
 
 fn check_work_log(ctx: &Context) -> Result<(), Error> {
     use serenity::model::gateway::Activity;
@@ -202,14 +210,14 @@ fn check_work_log(ctx: &Context) -> Result<(), Error> {
             didnt_size = didnt_speak.len() as u64;
             did_size = did_speak.len() as u64;
         }
-        Err(_) => {
-            println!("Failed to get messages.");
+        Err(why) => {
+            println!("Failed to get messages. {:?}", why);
         }
     }
 
     let work_log_channel = ctx.http.get_channel(770656917415788545);
     let mut msg_didnt_worklog = " remember to post your weekly progress!".to_string();
-    let mut msg_did_worklog = " posted in the past week, congrats.".to_string();
+    let mut msg_did_worklog = " posted in the past week, congrats!".to_string();
     for elem in didnt_speak {
         let str_mention = format!(" <@{}>", &elem.to_string());
         msg_didnt_worklog = format!("{}{}", &str_mention, &msg_didnt_worklog).to_owned();
@@ -234,8 +242,8 @@ fn check_work_log(ctx: &Context) -> Result<(), Error> {
                 }
             };
         }
-        Err(_) => {
-            println!("Error sending message to channel 770656917415788545.");
+        Err(why) => {
+            println!("Error sending message to worklog channel. {:?}", why);
         }
     };
 

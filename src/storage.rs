@@ -92,12 +92,17 @@ pub fn load_reminders(ctx: Context) -> Result<(), Error> {
                 if (time_since_message < time_to_wait_in_seconds) {
                     let final_time_wait = (time_to_wait_in_seconds - time_since_message) as u64;
                     if (final_time_wait > 0) {
-                        save_reminder(
+                        match save_reminder(
                             timestamp,
                             time_to_wait_in_seconds as i32,
                             user_id,
                             remind_msg.to_string(),
-                        )?;
+                        ) {
+                            Ok(_x) => {}
+                            Err(why) => {
+                                println!("Error saving reminder {:?}", why);
+                            }
+                        };
                         scheduler.after_duration(Duration::from_secs(final_time_wait), move || {
                             println!("Remind user {} about {}", user_id, remind_msg);
 

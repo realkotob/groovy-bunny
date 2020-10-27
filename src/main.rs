@@ -42,15 +42,21 @@ fn main() {
 
 #[command]
 fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
-    msg.reply(ctx, "Pong")?;
+    match msg.reply(ctx, "Pong") {
+        _ => {}
+    };
 
     Ok(())
 }
 
 #[command]
 fn help(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
-    msg.channel_id
-        .say(&ctx.http, "Available commands: \n * remindme ")?;
+    match msg
+        .channel_id
+        .say(&ctx.http, "Available commands: \n * remindme ")
+    {
+        _ => {}
+    };
     Ok(())
 }
 
@@ -105,12 +111,15 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             );
         }
         let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
-        storage::save_reminder(
+        match storage::save_reminder(
             message_stamp,
             time_to_wait_in_seconds,
             user_id,
             remind_msg.to_string(),
-        )?;
+        ) {
+            Ok(_x) => {}
+            Err(why) => println!("Error saving remider. {:?}", why),
+        };
 
         //// Alternative way to mention player instead of `msg.reply`
         // let remind_msg = format!(
@@ -140,7 +149,12 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             }
         };
     } else {
-        msg.channel_id.say(&ctx.http, format!("{}", &reply_msg))?;
+        match msg.channel_id.say(&ctx.http, format!("{}", &reply_msg)) {
+            Ok(_x) => {}
+            Err(why) => {
+                println!("Error when telling user about parse error. {:?}", why);
+            }
+        };
     }
 
     Ok(())
