@@ -12,7 +12,8 @@ edition = "2018"
 # panic = 'abort'
 
 [dependencies]
-chrono = "0.4.11"
-serenity = "0.8.6"
+chrono = "0.4.19"
+serenity = "0.8.7"
 task_scheduler = "0.2.0"
-parking_lot = "0.10.2"
+parking_lot = "0.11.0"
+job_scheduler = "1.2.1"
