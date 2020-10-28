@@ -147,8 +147,8 @@ impl EventHandler for Handler {
         use job_scheduler::{Job, JobScheduler};
         use std::time::Duration;
         let mut sched = JobScheduler::new();
-        let friday_noon = "0 0 12 * * FRI";
-        sched.add(Job::new("0 0 12 * * WED".parse().unwrap(), || {
+        let friday_noon = "0 0 9 * * FRI";
+        sched.add(Job::new("0 0 9 * * WED".parse().unwrap(), || {
             println!("check_work_log...");
             match check_work_log(&ctx) {
                 Ok(x) => println!("Checked worklog loaded."),
@@ -175,7 +175,10 @@ fn check_work_log(ctx: &Context) -> Result<(), Error> {
     use serenity::model::gateway::Activity;
     use serenity::model::id::{ChannelId, MessageId};
 
-    let channel_id = ChannelId(770656917415788545);
+    let worklog_channel_id = 705067423530745957;
+    let test_channel_id = 770656917415788545;
+
+    let channel_id = ChannelId(worklog_channel_id);
 
     let all_devs: Vec<u64> = vec![
         492385983833047051,
@@ -215,7 +218,7 @@ fn check_work_log(ctx: &Context) -> Result<(), Error> {
         }
     }
 
-    let work_log_channel = ctx.http.get_channel(770656917415788545);
+    let work_log_channel = ctx.http.get_channel(test_channel_id);
     let mut msg_didnt_worklog = " remember to post your weekly progress!".to_string();
     let mut msg_did_worklog = " posted in the past week, congrats!".to_string();
     for elem in didnt_speak {
