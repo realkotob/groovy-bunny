@@ -147,8 +147,7 @@ impl EventHandler for Handler {
         use job_scheduler::{Job, JobScheduler};
         use std::time::Duration;
         let mut sched = JobScheduler::new();
-        let friday_noon = "0 0 9 * * FRI";
-        sched.add(Job::new("0 0 9 * * WED".parse().unwrap(), || {
+        sched.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
             println!("check_work_log...");
             match check_work_log(&ctx) {
                 Ok(x) => println!("Checked worklog loaded."),
