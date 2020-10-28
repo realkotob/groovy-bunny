@@ -198,7 +198,7 @@ fn check_work_log(ctx: &Context) -> Result<(), Error> {
                 for elem in &msgs {
                     if (
                         (&dev == elem.author.id.as_u64())
-                            && ((Utc::now().timestamp() - elem.timestamp.timestamp()) < 604800)
+                            && ((Utc::now().timestamp() - elem.timestamp.timestamp()) < 432000)
                         // week 604800
                     ) {
                         dev_spoke = true;
