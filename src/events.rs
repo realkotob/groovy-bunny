@@ -175,7 +175,7 @@ fn check_work_log(ctx: &Context) -> Result<(), Error> {
     use serenity::model::id::{ChannelId, MessageId};
 
     let worklog_channel_id = 705067423530745957;
-    let test_channel_id = 770656917415788545;
+    // let test_channel_id = 770656917415788545;
 
     let channel_id = ChannelId(worklog_channel_id);
 
