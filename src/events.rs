@@ -217,7 +217,7 @@ fn check_work_log(ctx: &Context) -> Result<(), Error> {
         }
     }
 
-    let work_log_channel = ctx.http.get_channel(test_channel_id);
+    let work_log_channel = ctx.http.get_channel(worklog_channel_id);
     let mut msg_didnt_worklog = " remember to post your weekly progress!".to_string();
     let mut msg_did_worklog = " posted in the past week, congrats!".to_string();
     for elem in didnt_speak {
