@@ -195,14 +195,22 @@ fn check_work_log(ctx: &Context) -> Result<(), Error> {
         Ok(msgs) => {
             for dev in all_devs {
                 let mut dev_spoke = false;
+                let mut words_count = 0;
                 for elem in &msgs {
                     if (
                         (&dev == elem.author.id.as_u64())
                             && ((Utc::now().timestamp() - elem.timestamp.timestamp()) < 432000)
                         // week 604800
                     ) {
-                        dev_spoke = true;
+                        let mut words = elem.content.split_whitespace();
+                        let local_words_count = words.count();
+                        if (local_words_count > 2) {
+                            words_count += local_words_count;
+                        }
                     };
+                }
+                if (words_count > 5) {
+                    dev_spoke = true;
                 }
                 if dev_spoke {
                     did_speak.push(dev);
