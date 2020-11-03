@@ -35,6 +35,8 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
         };
     }));
 
+    println!("Scheduled announcement, now entering scheduler loop ...");
+
     loop {
         sched.tick();
 

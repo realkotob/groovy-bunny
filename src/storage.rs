@@ -127,11 +127,13 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
         File::create(path).expect("Storage create failed.");
     }
 
+    println!("Reminders loaded from file into memory.");
+
     let cloned_ctx = Arc::clone(&ctx);
     let unlocked_ctx = &*cloned_ctx.lock().unwrap();
 
     match announce::schedule_announcements(unlocked_ctx) {
-        Ok(x) => println!("Schedule announcements."),
+        Ok(x) => println!("Scheduled announcements OK."),
         Err(why) => println!("Error in schedule_announcements. {:?}", why),
     };
 

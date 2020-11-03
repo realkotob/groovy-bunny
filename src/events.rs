@@ -138,15 +138,15 @@ impl EventHandler for Handler {
         }
     }
     fn ready(&self, ctx: Context, ready: Ready) {
+        println!("{} is ready", ready.user.name);
+
         ctx.set_activity(Activity::playing(&String::from(
             "Oh dear! I shall be too late!",
         )));
 
         match storage::load_reminders(ctx) {
-            Ok(x) => println!("Reminders loaded."),
+            Ok(_) => println!("Reminders loaded OK."),
             Err(why) => println!("Error loading reminders. {:?}", why),
         };
-
-        println!("{} is ready", ready.user.name);
     }
 }
