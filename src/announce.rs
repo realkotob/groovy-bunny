@@ -19,7 +19,7 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
         };
     }));
 
-    sched.add(Job::new("0 0 15 * * TUE".parse().unwrap(), || {
+    sched.add(Job::new("0 0 13 * * TUE".parse().unwrap(), || {
         println!("send_qa_day_dev_reminder ...");
         match send_qa_day_dev_reminder(&ctx) {
             Ok(x) => println!("Sent QA day dev reminder."),
