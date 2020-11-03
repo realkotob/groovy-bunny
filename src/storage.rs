@@ -1,14 +1,12 @@
 extern crate task_scheduler;
 
-use super::parse_time;
-use chrono::Utc;
-use serenity::client::Client;
+use super::announce;
 use serenity::prelude::Context;
 use std::fs;
+
 use std::fs::File;
 use std::fs::OpenOptions;
-use std::io::{BufRead, BufReader, Error, Read, Write};
-use std::thread;
+use std::io::{Error, Read, Write};
 use std::time::Duration;
 use task_scheduler::Scheduler;
 
@@ -49,13 +47,13 @@ pub fn save_reminder(
     Ok(())
 }
 
-pub fn load_reminders(ctx: Context) -> Result<(), Error> {
+pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
     println!("* Try load reminders list.");
     use chrono::prelude::*;
     let path = "cache/data.txt";
     use std::sync::{Arc, Mutex};
 
-    let ctx = Arc::new(Mutex::new(ctx));
+    let ctx = Arc::new(Mutex::new(ctx_src));
 
     if (fs::metadata(path).is_ok()) {
         let mut file = File::open(path).expect("File open failed");
@@ -128,6 +126,14 @@ pub fn load_reminders(ctx: Context) -> Result<(), Error> {
 
         File::create(path).expect("Storage create failed.");
     }
+
+    let cloned_ctx = Arc::clone(&ctx);
+    let unlocked_ctx = &*cloned_ctx.lock().unwrap();
+
+    match announce::schedule_announcements(unlocked_ctx) {
+        Ok(x) => println!("Schedule announcements."),
+        Err(why) => println!("Error in schedule_announcements. {:?}", why),
+    };
 
     Ok(())
 }
