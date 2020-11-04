@@ -27,7 +27,7 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
         };
     }));
 
-    sched.add(Job::new("0 0 8 * * WED".parse().unwrap(), || {
+    sched.add(Job::new("0 10 8 * * WED".parse().unwrap(), || {
         println!("send_qa_day_all_reminder ...");
         match send_qa_day_all_reminder(&ctx) {
             Ok(x) => println!("Sent QA dev reminder."),
@@ -81,7 +81,7 @@ pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
 
     let dev_reminder_chan = ctx.http.get_channel(dev_reminder_channel_id);
 
-    let msg_dev_remider = format!("Today is QA Day! Happy testing @here !",);
+    let msg_dev_remider = format!("Today is QA Day! Happy testing!",);
 
     match dev_reminder_chan {
         Ok(x) => {
