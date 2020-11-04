@@ -77,7 +77,7 @@ pub fn send_qa_day_dev_reminder(ctx: &Context) -> Result<(), Error> {
 }
 
 pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
-    let dev_reminder_channel_id: u64 = 704822217237856301;
+    let dev_reminder_channel_id: u64 = 705090277794119790;
 
     let dev_reminder_chan = ctx.http.get_channel(dev_reminder_channel_id);
 
