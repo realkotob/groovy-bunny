@@ -27,7 +27,7 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
         };
     }));
 
-    sched.add(Job::new("0 15 8 * * WED".parse().unwrap(), || {
+    sched.add(Job::new("0 0 7 * * WED".parse().unwrap(), || {
         println!("send_qa_day_all_reminder ...");
         match send_qa_day_all_reminder(&ctx) {
             Ok(x) => println!("Sent QA dev reminder."),
