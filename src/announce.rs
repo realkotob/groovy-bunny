@@ -107,8 +107,9 @@ pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
 }
 
 pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
-    let worklog_channel_id: u64 = 705067423530745957;
-    // let test_channel_id: u64 = 770656917415788545;
+    let worklog_channel_id: u64 = 705067423530745957; // Real
+    
+    // let worklog_channel_id: u64 = 774206671358394439; // Test
 
     let channel_id = ChannelId(worklog_channel_id);
 
@@ -160,25 +161,52 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
     }
 
     let work_log_channel = ctx.http.get_channel(worklog_channel_id);
-    let mut msg_didnt_worklog = " remember to post your weekly progress!".to_string();
-    let mut msg_did_worklog = " posted in the past week, congrats!".to_string();
-    for elem in didnt_speak {
-        let str_mention = format!(" <@{}>", &elem.to_string());
-        msg_didnt_worklog = format!("{}{}", &str_mention, &msg_didnt_worklog).to_owned();
-    }
-    for elem in did_speak {
-        let str_mention = format!(" <@{}>", &elem.to_string());
-        msg_did_worklog = format!("{}{}", &str_mention, &msg_did_worklog);
-    }
+
     match work_log_channel {
         Ok(x) => {
             match x.guild() {
                 Some(guild_lock) => {
                     if (didnt_size > 0) {
+                        let mut msg_didnt_worklog =
+                            "remember to post your weekly progress!".to_string();
+
+                        for elem in didnt_speak {
+                            let str_mention = format!("<@{}> ", &elem.to_string());
+                            msg_didnt_worklog =
+                                format!("{}{}", &str_mention, &msg_didnt_worklog).to_owned();
+                        }
                         guild_lock.read().say(&ctx.http, msg_didnt_worklog);
                     }
                     if (did_size > 0) {
-                        guild_lock.read().say(&ctx.http, msg_did_worklog);
+                        let mut names_added = 0;
+                        let mut msg_did_worklog = "posted in the past week, congrats!".to_string();
+
+                        for elem in did_speak {
+                            let user_res = &ctx.http.get_user(elem);
+                            match user_res {
+                                Ok(x_user) => {
+                                    names_added += 1;
+                                    let mut user_nick =
+                                        x_user.tag().split('#').collect::<Vec<&str>>()[0]
+                                            .to_string();
+                                    let nick_res = x_user.nick_in(&ctx.http, 704822217237856298);
+                                    match nick_res {
+                                        Some(x_nick) => {
+                                            user_nick = x_nick;
+                                        }
+                                        None => {}
+                                    };
+
+                                    msg_did_worklog = format!("{} {}", user_nick, &msg_did_worklog);
+                                }
+                                Err(why) => {
+                                    println!("Error getting user with id {}. {:?}", elem, why);
+                                }
+                            };
+                        }
+                        if (names_added > 0) {
+                            guild_lock.read().say(&ctx.http, msg_did_worklog);
+                        }
                     }
                 }
                 None => {
