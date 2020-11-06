@@ -9,9 +9,11 @@ use std::time::Duration;
 use serenity::prelude::Context;
 
 pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
-    let mut sched = JobScheduler::new();
+    let mut sched_worklog = JobScheduler::new();
+    let mut sched_qa_dev_reminder = JobScheduler::new();
+    let mut sched_qa_day = JobScheduler::new();
 
-    sched.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
+    sched_worklog.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
         println!("check_work_log ...");
         match check_work_log(&ctx) {
             Ok(x) => println!("Checked worklog loaded."),
@@ -19,7 +21,7 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
         };
     }));
 
-    sched.add(Job::new("0 0 13 * * TUE".parse().unwrap(), || {
+    sched_qa_dev_reminder.add(Job::new("0 0 13 * * TUE".parse().unwrap(), || {
         println!("send_qa_day_dev_reminder ...");
         match send_qa_day_dev_reminder(&ctx) {
             Ok(x) => println!("Sent QA day dev reminder."),
@@ -27,7 +29,7 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
         };
     }));
 
-    sched.add(Job::new("0 0 7 * * WED".parse().unwrap(), || {
+    sched_qa_day.add(Job::new("0 0 7 * * WED".parse().unwrap(), || {
         println!("send_qa_day_all_reminder ...");
         match send_qa_day_all_reminder(&ctx) {
             Ok(x) => println!("Sent QA dev reminder."),
@@ -38,7 +40,9 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
     println!("Scheduled announcement, now entering scheduler loop ...");
 
     loop {
-        sched.tick();
+        sched_worklog.tick();
+        sched_qa_dev_reminder.tick();
+        sched_qa_day.tick();
 
         std::thread::sleep(Duration::from_millis(500));
     }
