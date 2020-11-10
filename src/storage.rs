@@ -1,7 +1,7 @@
 extern crate task_scheduler;
-
+#[allow(unused_parens)]
 use super::announce;
-use log::{debug, error, info, trace, warn};
+use log::*;
 use serenity::prelude::Context;
 use std::fs;
 
@@ -28,12 +28,12 @@ pub fn save_reminder(
     let save_entry = save_entry.replace("\n", "/n");
     let save_entry = format!("{}\n", save_entry);
 
-    debug!("* Save entry --> {}", save_entry);
+    info!("Save entry --> {}", save_entry);
 
     let path = "cache/data.txt";
 
     fs::create_dir_all("cache").expect("Error creating cache folder");
-    if (!fs::metadata(path).is_ok()) {
+    if !fs::metadata(path).is_ok() {
         File::create(path).expect("Storage create failed.");
     }
 
@@ -49,14 +49,14 @@ pub fn save_reminder(
 }
 
 pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
-    debug!("* Try load reminders list.");
+    info!("Try load reminders list.");
     use chrono::prelude::*;
     let path = "cache/data.txt";
     use std::sync::{Arc, Mutex};
 
     let ctx = Arc::new(Mutex::new(ctx_src));
 
-    if (fs::metadata(path).is_ok()) {
+    if fs::metadata(path).is_ok() {
         let mut file = File::open(path).expect("File open failed");
         let mut contents = String::new();
         file.read_to_string(&mut contents).unwrap();
@@ -70,7 +70,7 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
         for rem in split_args {
             let cloned_ctx = Arc::clone(&ctx);
 
-            if (rem.len() > 8) {
+            if rem.len() > 8 {
                 // println!("Loaded reminder {}", &rem.as_str());
                 let mut splitter = rem.splitn(4, " ").map(|x| x.to_string());
 
@@ -97,11 +97,14 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
 
                 let time_since_message = Utc::now().signed_duration_since(datetime).num_seconds();
 
-                // println!("Maybe remind user {} about {}", user_id, remind_msg);
+                if time_since_message < time_to_wait_in_seconds {
+                    println!(
+                        "Schedule loaded reminder. user: {} msg: {}",
+                        user_id, remind_msg
+                    );
 
-                if (time_since_message < time_to_wait_in_seconds) {
                     let final_time_wait = (time_to_wait_in_seconds - time_since_message) as u64;
-                    if (final_time_wait > 0) {
+                    if final_time_wait > 0 {
                         match save_reminder(
                             timestamp,
                             time_to_wait_in_seconds as i32,
@@ -114,20 +117,34 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
                             }
                         };
                         scheduler.after_duration(Duration::from_secs(final_time_wait), move || {
-                            debug!("Remind user {} about {}", user_id, remind_msg);
-
-                            let mut file = File::open(".token").expect("Error opening token file");
-                            let mut token = String::new();
-                            file.read_to_string(&mut token)
-                                .expect("Token could not be read");
+                            info!("Remind user {} about {}", user_id, remind_msg);
 
                             let unlocked_ctx = &*cloned_ctx.lock().unwrap();
                             let remind_msg = remind_msg.replace("/n", "\n");
-                            let dm_reminder = unlocked_ctx
-                                .http
-                                .get_user(user_id)
-                                .expect("Failed to retrieve user from id")
-                                .direct_message(unlocked_ctx, move |m| m.content(remind_msg));
+
+                            let res_user = unlocked_ctx.http.get_user(user_id);
+
+                            match res_user {
+                                Ok(user_unwrapped) => {
+                                    let dm_result = user_unwrapped
+                                        .direct_message(unlocked_ctx, move |m| {
+                                            m.content(remind_msg)
+                                        });
+                                    match dm_result {
+                                        Ok(_) => {}
+                                        Err(why) => error!(
+                                            "Failed to send DM for stored reminder. {:?}",
+                                            why
+                                        ),
+                                    }
+                                }
+                                Err(why) => {
+                                    error!(
+                                        "Failed to retrieve user from id for stored reminder. {:?}",
+                                        why
+                                    );
+                                }
+                            }
                         });
                     }
                 }
@@ -139,13 +156,13 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
         File::create(path).expect("Storage create failed.");
     }
 
-    debug!("Reminders loaded from file into memory.");
+    info!("Reminders loaded from file into memory.");
 
     let cloned_ctx = Arc::clone(&ctx);
     let unlocked_ctx = &*cloned_ctx.lock().unwrap();
 
     match announce::schedule_announcements(unlocked_ctx) {
-        Ok(x) => info!("Scheduled announcements OK."),
+        Ok(_x) => info!("Scheduled announcements OK."),
         Err(why) => error!("Error in schedule_announcements. {:?}", why),
     };
 

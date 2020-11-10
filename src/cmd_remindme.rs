@@ -1,23 +1,15 @@
-use super::announce;
-use super::events::Handler;
 #[allow(unused_parens)]
 use super::parse_time;
 use super::storage;
-use log::{debug, error, info, trace, warn};
+use log::*;
 
 use chrono::Utc;
 use serenity::{
-    client::Client,
     framework::standard::Args,
-    framework::standard::{
-        macros::{command, group},
-        CommandResult, StandardFramework,
-    },
+    framework::standard::{ CommandResult},
     model::channel::Message,
     prelude::Context,
 };
-use std::fs::File;
-use std::io::prelude::*;
 use std::thread;
 
 pub fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -43,13 +35,20 @@ pub fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResu
 
         let dm_confirm = msg.author.direct_message(&ctx, |m| {
             m.content(format!("Reminder will be DMed in {}.{}", &reply_msg, {
-                if (!msg_private) {
+                if !msg_private {
                     " Others can react with 👀 to also be reminded."
                 } else {
                     ""
                 }
             }))
         });
+
+        match dm_confirm {
+            Ok(_x) => {}
+            Err(why) => {
+                error!("Error sending DM to reacted user. {:?}", why);
+            }
+        }
 
         let _ = msg.react(&ctx, '👀');
         let mut msg_url = String::from("Url not found");

@@ -1,3 +1,5 @@
+#[allow(unused_parens)]
+
 pub fn parse_for_wait_time(time_offset: i32, args: Vec<&str>) -> (String, i32, i32) {
     let mut reply_msg = String::from("Failed to parse date.");
     let mut time_to_wait_in_seconds: i32 = 0;
@@ -39,7 +41,7 @@ pub fn parse_for_wait_time(time_offset: i32, args: Vec<&str>) -> (String, i32, i
                     n * 60
                 }
             },
-            Err(e) => 0,
+            Err(_e) => 0,
         };
     }
 

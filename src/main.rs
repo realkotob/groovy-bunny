@@ -1,11 +1,12 @@
 mod announce;
+#[allow(unused_parens)]
+
 extern crate log;
-use log::{debug, error, info, trace, warn};
+use log::*;
 mod cmd_remindme;
 mod events;
 mod parse_time;
 mod storage;
-use chrono::Utc;
 use events::Handler;
 use serenity::{
     client::Client,
@@ -19,19 +20,22 @@ use serenity::{
 };
 use std::fs::File;
 use std::io::prelude::*;
-use std::thread;
-use syslog::{Error, Facility};
+use syslog::{Facility};
+use log_panics;
 #[group]
 #[commands(help, ping, remindme)]
 struct General;
 
 fn main() {
-    let init_logger = syslog::init(Facility::LOG_USER, log::LevelFilter::Debug, None);
+    let init_logger = syslog::init(Facility::LOG_USER, log::LevelFilter::Info, None);
 
     match init_logger {
-        Ok(what) => {}
+        Ok(_what) => {}
         Err(err) => error!("Error initializing logger. {:?}", err),
     }
+    
+    log_panics::init();
+
     let mut file = File::open(".token").unwrap();
     let mut token = String::new();
     file.read_to_string(&mut token)
@@ -59,7 +63,7 @@ fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-fn help(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
+fn help(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
     match msg
         .channel_id
         .say(&ctx.http, "Available commands: \n * remindme ")
@@ -70,6 +74,6 @@ fn help(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
 }
 
 #[command]
-fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
+fn remindme(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
     cmd_remindme::remindme(ctx, msg, args)
 }

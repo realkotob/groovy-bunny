@@ -4,7 +4,7 @@ use serenity::model::id::ChannelId;
 use std::io::Error;
 extern crate job_scheduler;
 use job_scheduler::{Job, JobScheduler};
-use log::{debug, error, info, trace, warn};
+use log::*;
 use std::time::Duration;
 
 use serenity::prelude::Context;
@@ -16,21 +16,21 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
 
     sched_worklog.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
         match check_work_log(&ctx) {
-            Ok(x) => info!("Checked worklog loaded."),
+            Ok(_x) => info!("Checked worklog loaded."),
             Err(why) => error!("Error checking worklog {:?}", why),
         };
     }));
 
     sched_qa_dev_reminder.add(Job::new("0 0 13 * * TUE".parse().unwrap(), || {
         match send_qa_day_dev_reminder(&ctx) {
-            Ok(x) => info!("Sent QA day dev reminder."),
+            Ok(_x) => info!("Sent QA day dev reminder."),
             Err(why) => error!("Error sending QA day dev reminder {:?}", why),
         };
     }));
 
     sched_qa_day.add(Job::new("0 0 7 * * WED".parse().unwrap(), || {
         match send_qa_day_all_reminder(&ctx) {
-            Ok(x) => info!("Sent QA dev reminder."),
+            Ok(_x) => info!("Sent QA dev reminder."),
             Err(why) => error!("Error sending QA day reminder {:?}", why),
         };
     }));
@@ -65,14 +65,14 @@ pub fn send_qa_day_dev_reminder(ctx: &Context) -> Result<(), Error> {
                 Some(guild_lock) => {
                     let say_res = guild_lock.read().say(&ctx.http, msg_dev_remider);
                     match say_res {
-                        Ok(x) => {}
+                        Ok(_x) => {}
                         Err(why) => {
                             error!("Error saying message to dev reminder channel. {:?}", why);
                         }
                     }
                 }
                 None => {
-                    println!("It's not a guild!");
+                    warn!("It's not a guild!");
                 }
             };
         }
@@ -97,14 +97,14 @@ pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
                 Some(guild_lock) => {
                     let say_res = guild_lock.read().say(&ctx.http, msg_dev_remider);
                     match say_res {
-                        Ok(x) => {}
+                        Ok(_x) => {}
                         Err(why) => {
                             error!("Error saying message to QA reminder channel. {:?}", why);
                         }
                     }
                 }
                 None => {
-                    println!("It's not a guild!");
+                    warn!("It's not a guild!");
                 }
             };
         }
@@ -148,12 +148,12 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
                     ) {
                         let mut words = elem.content.split_whitespace();
                         let local_words_count = words.count();
-                        if (local_words_count > 2) {
+                        if local_words_count > 2 {
                             words_count += local_words_count;
                         }
                     };
                 }
-                if (words_count > 5) {
+                if words_count > 5 {
                     dev_spoke = true;
                 }
                 if dev_spoke {
@@ -176,7 +176,7 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
         Ok(x) => {
             match x.guild() {
                 Some(guild_lock) => {
-                    if (didnt_size > 0) {
+                    if didnt_size > 0 {
                         let mut msg_didnt_worklog =
                             "remember to post your weekly progress!".to_string();
 
@@ -187,13 +187,13 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
                         }
                         let say_res = guild_lock.read().say(&ctx.http, msg_didnt_worklog);
                         match say_res {
-                            Ok(x) => {}
+                            Ok(_x) => {}
                             Err(why) => {
                                 error!("Error saying message to work log channel. {:?}", why);
                             }
                         }
                     }
-                    if (did_size > 0) {
+                    if did_size > 0 {
                         let mut names_added = 0;
                         let mut msg_did_worklog = "posted in the past week, congrats!".to_string();
 
@@ -220,10 +220,10 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
                                 }
                             };
                         }
-                        if (names_added > 0) {
+                        if names_added > 0 {
                             let say_res = guild_lock.read().say(&ctx.http, msg_did_worklog);
                             match say_res {
-                                Ok(x) => {}
+                                Ok(_x) => {}
                                 Err(why) => {
                                     error!("Error saying message to work log channel. {:?}", why);
                                 }
@@ -232,7 +232,7 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
                     }
                 }
                 None => {
-                    println!("It's not a guild!");
+                    warn!("It's not a guild!");
                 }
             };
         }

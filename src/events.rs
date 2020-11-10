@@ -1,8 +1,7 @@
-use super::announce;
 #[allow(unused_parens)]
 use super::parse_time;
 use super::storage;
-use log::{debug, error, info, trace, warn};
+use log::*;
 
 use chrono::Utc;
 
@@ -29,7 +28,7 @@ fn split_once(in_string: &str) -> (&str, &str) {
 impl EventHandler for HandlerEmpty {}
 
 impl EventHandler for Handler {
-    fn reaction_add(&self, ctx: Context, mut reaction: Reaction) {
+    fn reaction_add(&self, ctx: Context, reaction: Reaction) {
         let reaction_msg = reaction.message(&ctx.http).unwrap();
         match &reaction.emoji {
             ReactionType::Unicode(uni) => match uni.as_ref() {
@@ -38,8 +37,7 @@ impl EventHandler for Handler {
 
                     let message_content = &reaction_msg.content;
                     let msg_args: Vec<&str> = message_content.split_whitespace().collect();
-                    let mut msg_url = String::from("Url not found");
-                    println!(
+                    debug!(
                         "Msg author {} reaction user {}",
                         reaction_msg.author.id, reaction.user_id
                     );
@@ -50,7 +48,7 @@ impl EventHandler for Handler {
                         let time_since_message = Utc::now()
                             .signed_duration_since(reaction_msg.timestamp)
                             .num_seconds();
-                        let (reply_msg, time_to_wait_in_seconds, used_args) =
+                        let (reply_msg, time_to_wait_in_seconds, _used_args) =
                             parse_time::parse_for_wait_time(
                                 time_since_message as i32,
                                 Vec::from(date_args),
@@ -58,13 +56,21 @@ impl EventHandler for Handler {
                         if reaction_msg.author.id == reaction.user_id
                             || reaction.user(&ctx).unwrap().bot
                         {
-                            println!("Bots and original user cannot be reminded with reaction.");
+                            debug!("Bots and original user cannot be reminded with reaction.");
                         } else if time_to_wait_in_seconds <= 0 {
                             let dm_confirm =
                                 reaction.user(&ctx).unwrap().direct_message(&ctx, |m| {
                                     m.content(format!("Reminder already passed."))
                                 });
+
+                            match dm_confirm {
+                                Ok(_) => {}
+                                Err(why) => {
+                                    error!("Error sending completion notification DM {:?}", why);
+                                }
+                            }
                         } else {
+                            let mut msg_url = String::from("Url not found");
                             if reaction_msg.is_private() {
                                 msg_url = format!(
                                     "http://discordapp.com/channels/@me/{}/{}",
@@ -80,13 +86,18 @@ impl EventHandler for Handler {
                             }
                             // TODO Add rest of the arguments to the message
                             let remind_msg = format!("Reminder for link: {}", &msg_url);
-                            println!("Requested reminder through :eyes: emoji.");
                             let dm_confirm = reaction.user(&ctx).unwrap().direct_message(&ctx, |m| {
                                 m.content(format!(
                                     "Reminder will be DMed in {} from original message date. Others can react with 👀 to also be reminded.",
                                     &reply_msg
                                 ))
                             });
+                            match dm_confirm {
+                                Ok(_) => {}
+                                Err(why) => {
+                                    error!("Error sending confirmation notification DM {:?}", why);
+                                }
+                            }
                             let user_id = &reaction.user(&ctx).unwrap().id.0;
                             match storage::save_reminder(
                                 reaction_msg.timestamp.timestamp(),
