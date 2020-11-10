@@ -4,10 +4,12 @@ extern crate log;
 use log::*;
 mod cmd_remindme;
 mod events;
+mod globalstate;
 mod parse_time;
 mod storage;
 use events::Handler;
 use log_panics;
+
 use serenity::{
     async_trait,
     client::Client,
@@ -27,6 +29,19 @@ use tokio;
 #[commands(help, ping, remindme)]
 struct General;
 
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref TOKEN: String = {
+        let mut file = File::open(".token").unwrap();
+        let mut token = String::new();
+        file.read_to_string(&mut token)
+            .expect("Token could not be read");
+
+        token
+    };
+}
+
 #[tokio::main]
 async fn main() {
     let init_logger = syslog::init(Facility::LOG_USER, log::LevelFilter::Info, None);
@@ -38,16 +53,11 @@ async fn main() {
 
     log_panics::init();
 
-    let mut file = File::open(".token").unwrap();
-    let mut token = String::new();
-    file.read_to_string(&mut token)
-        .expect("Token could not be read");
-
     let new_framework = StandardFramework::new()
         .configure(|c| c.prefix("!"))
         .group(&GENERAL_GROUP);
 
-    let mut client = Client::builder(&token)
+    let mut client = Client::builder(globalstate::get_token())
         .event_handler(Handler)
         .framework(new_framework)
         .await

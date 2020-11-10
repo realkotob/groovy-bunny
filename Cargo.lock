@@ -42,7 +42,7 @@ dependencies = [
  "futures-util",
  "log",
  "pin-project 1.0.1",
- "tokio",
+ "tokio 0.2.21",
  "tokio-rustls 0.14.1",
  "tungstenite",
  "webpki-roots 0.20.0",
@@ -157,13 +157,14 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "job_scheduler",
+ "lazy_static",
  "log",
  "log-panics",
  "parking_lot",
  "serenity",
  "syslog",
  "task_scheduler",
- "tokio",
+ "tokio 0.3.3",
 ]
 
 [[package]]
@@ -296,6 +297,7 @@ checksum = "1e05b85ec287aac0dc34db7d4a569323df697f9c55b99b15d6b4ef8cde49f613"
 dependencies = [
  "futures-channel",
  "futures-core",
+ "futures-executor",
  "futures-io",
  "futures-sink",
  "futures-task",
@@ -317,6 +319,17 @@ name = "futures-core"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59f5fff90fd5d971f936ad674802482ba441b6f09ba5e15fd8b39145582ca399"
+
+[[package]]
+name = "futures-executor"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "10d6bb888be1153d3abeb9006b11b02cf5e9b209fda28693c31ae1e4e012e314"
+dependencies = [
+ "futures-core",
+ "futures-task",
+ "futures-util",
+]
 
 [[package]]
 name = "futures-io"
@@ -413,8 +426,17 @@ dependencies = [
  "indexmap",
  "log",
  "slab",
- "tokio",
+ "tokio 0.2.21",
  "tokio-util",
+]
+
+[[package]]
+name = "hermit-abi"
+version = "0.1.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5aca5565f760fb5b220e499d72710ed156fdb74e631659e99377d9ebfbd13ae8"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -463,7 +485,7 @@ dependencies = [
  "pin-project 0.4.17",
  "socket2",
  "time",
- "tokio",
+ "tokio 0.2.21",
  "tower-service",
  "want",
 ]
@@ -479,7 +501,7 @@ dependencies = [
  "hyper",
  "log",
  "rustls 0.17.0",
- "tokio",
+ "tokio 0.2.21",
  "tokio-rustls 0.13.1",
  "webpki",
 ]
@@ -539,12 +561,13 @@ checksum = "b8b7a7c0c47db5545ed3fef7468ee7bb5b74691498139e4b3f6a20685dc6dd8e"
 
 [[package]]
 name = "job_scheduler"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51f368c9c76dde2282714ae32dc274b79c27527a0c06c816f6dda048904d0d7c"
+version = "1.3.0"
+source = "git+https://github.com/asheraryam/job_scheduler?branch=async#f29012c67aa88340bd269c7a543b3798de6cd859"
 dependencies = [
  "chrono",
  "cron",
+ "futures",
+ "tokio 0.3.3",
  "uuid",
 ]
 
@@ -721,6 +744,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c62be47e61d1842b9170f0fdeec8eba98e60e90e5446449a0545e5152acd7096"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "num_cpus"
+version = "1.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05499f3756671c15885fee9034446956fff3f243d6077b91e5767df161f766b3"
+dependencies = [
+ "hermit-abi",
+ "libc",
 ]
 
 [[package]]
@@ -934,7 +967,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_urlencoded",
- "tokio",
+ "tokio 0.2.21",
  "tokio-rustls 0.13.1",
  "url",
  "wasm-bindgen",
@@ -1075,7 +1108,7 @@ dependencies = [
  "serde",
  "serde_json",
  "static_assertions",
- "tokio",
+ "tokio 0.2.21",
  "tracing",
  "tracing-futures",
  "typemap_rev",
@@ -1186,7 +1219,20 @@ dependencies = [
  "mio",
  "pin-project-lite",
  "slab",
- "tokio-macros",
+ "tokio-macros 0.2.5",
+]
+
+[[package]]
+name = "tokio"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5ca08accbcb46f11fd8d2d1c6158c348b7888009a1f39260bcad66f6a454250"
+dependencies = [
+ "autocfg",
+ "num_cpus",
+ "pin-project-lite",
+ "slab",
+ "tokio-macros 0.3.1",
 ]
 
 [[package]]
@@ -1201,6 +1247,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-macros"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21d30fdbb5dc2d8f91049691aa1a9d4d4ae422a21c334ce8936e5886d30c5c45"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "tokio-rustls"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1208,7 +1265,7 @@ checksum = "15cb62a0d2770787abc96e99c1cd98fcf17f94959f3af63ca85bdfb203f051b4"
 dependencies = [
  "futures-core",
  "rustls 0.17.0",
- "tokio",
+ "tokio 0.2.21",
  "webpki",
 ]
 
@@ -1220,7 +1277,7 @@ checksum = "e12831b255bcfa39dc0436b01e19fea231a37db570686c06ee72c423479f889a"
 dependencies = [
  "futures-core",
  "rustls 0.18.1",
- "tokio",
+ "tokio 0.2.21",
  "webpki",
 ]
 
@@ -1235,7 +1292,7 @@ dependencies = [
  "futures-sink",
  "log",
  "pin-project-lite",
- "tokio",
+ "tokio 0.2.21",
 ]
 
 [[package]]

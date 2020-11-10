@@ -116,12 +116,10 @@ pub async fn load_reminders(ctx_src: Context) -> Result<(), Error> {
                                 error!("Error saving reminder {:?}", why);
                             }
                         };
-                        scheduler.after_duration(
-                            Duration::from_secs(final_time_wait),
-                            async move || {
-                                executed_reminder(user_id, remind_msg, cloned_ctx).await;
-                            },
-                        );
+                        scheduler.after_duration(Duration::from_secs(final_time_wait), move || {
+                            // FIXME This needs to await
+                            executed_reminder(user_id, remind_msg);
+                        });
                     }
                 }
             }
@@ -134,10 +132,7 @@ pub async fn load_reminders(ctx_src: Context) -> Result<(), Error> {
 
     info!("Reminders loaded from file into memory.");
 
-    let cloned_ctx = Arc::clone(&ctx);
-    let unlocked_ctx = &*cloned_ctx.lock().unwrap();
-
-    match announce::schedule_announcements(unlocked_ctx).await {
+    match announce::schedule_announcements().await {
         Ok(_x) => info!("Scheduled announcements OK."),
         Err(why) => error!("Error in schedule_announcements. {:?}", why),
     };
@@ -145,22 +140,19 @@ pub async fn load_reminders(ctx_src: Context) -> Result<(), Error> {
     Ok(())
 }
 
-async fn executed_reminder(
-    user_id: u64,
-    remind_msg: String,
-    cloned_ctx: std::sync::Arc<std::sync::Mutex<serenity::prelude::Context>>,
-) {
+async fn executed_reminder(user_id: u64, remind_msg: String) {
+    let ctx_http = super::globalstate::make_http();
+
     info!("Remind user {} about {}", user_id, remind_msg);
 
-    let unlocked_ctx = &*cloned_ctx.lock().unwrap();
     let remind_msg = remind_msg.replace("/n", "\n");
 
-    let res_user = unlocked_ctx.http.get_user(user_id).await;
+    let res_user = ctx_http.get_user(user_id).await;
 
     match res_user {
         Ok(user_unwrapped) => {
             let dm_result = user_unwrapped
-                .direct_message(unlocked_ctx, move |m| m.content(remind_msg))
+                .direct_message(&ctx_http, move |m| m.content(remind_msg))
                 .await;
             match dm_result {
                 Ok(_) => {}
