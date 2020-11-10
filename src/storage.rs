@@ -4,7 +4,7 @@ use super::announce;
 use log::*;
 use serenity::prelude::Context;
 use std::fs;
-#[feature(async_closure)]
+
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{Error, Read, Write};
@@ -48,7 +48,7 @@ pub fn save_reminder(
     Ok(())
 }
 
-pub async fn load_reminders(ctx_src: Context) -> Result<(), Error> {
+pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
     info!("Try load reminders list.");
     use chrono::prelude::*;
     let path = "cache/data.txt";
@@ -116,12 +116,36 @@ pub async fn load_reminders(ctx_src: Context) -> Result<(), Error> {
                                 error!("Error saving reminder {:?}", why);
                             }
                         };
-                        scheduler.after_duration(
-                            Duration::from_secs(final_time_wait),
-                            async move || {
-                                executed_reminder(user_id, remind_msg, cloned_ctx).await;
-                            },
-                        );
+                        scheduler.after_duration(Duration::from_secs(final_time_wait), move || {
+                            info!("Remind user {} about {}", user_id, remind_msg);
+
+                            let unlocked_ctx = &*cloned_ctx.lock().unwrap();
+                            let remind_msg = remind_msg.replace("/n", "\n");
+
+                            let res_user = unlocked_ctx.http.get_user(user_id);
+
+                            match res_user {
+                                Ok(user_unwrapped) => {
+                                    let dm_result = user_unwrapped
+                                        .direct_message(unlocked_ctx, move |m| {
+                                            m.content(remind_msg)
+                                        });
+                                    match dm_result {
+                                        Ok(_) => {}
+                                        Err(why) => error!(
+                                            "Failed to send DM for stored reminder. {:?}",
+                                            why
+                                        ),
+                                    }
+                                }
+                                Err(why) => {
+                                    error!(
+                                        "Failed to retrieve user from id for stored reminder. {:?}",
+                                        why
+                                    );
+                                }
+                            }
+                        });
                     }
                 }
             }
@@ -137,41 +161,10 @@ pub async fn load_reminders(ctx_src: Context) -> Result<(), Error> {
     let cloned_ctx = Arc::clone(&ctx);
     let unlocked_ctx = &*cloned_ctx.lock().unwrap();
 
-    match announce::schedule_announcements(unlocked_ctx).await {
+    match announce::schedule_announcements(unlocked_ctx) {
         Ok(_x) => info!("Scheduled announcements OK."),
         Err(why) => error!("Error in schedule_announcements. {:?}", why),
     };
 
     Ok(())
-}
-
-async fn executed_reminder(
-    user_id: u64,
-    remind_msg: String,
-    cloned_ctx: std::sync::Arc<std::sync::Mutex<serenity::prelude::Context>>,
-) {
-    info!("Remind user {} about {}", user_id, remind_msg);
-
-    let unlocked_ctx = &*cloned_ctx.lock().unwrap();
-    let remind_msg = remind_msg.replace("/n", "\n");
-
-    let res_user = unlocked_ctx.http.get_user(user_id).await;
-
-    match res_user {
-        Ok(user_unwrapped) => {
-            let dm_result = user_unwrapped
-                .direct_message(unlocked_ctx, move |m| m.content(remind_msg))
-                .await;
-            match dm_result {
-                Ok(_) => {}
-                Err(why) => error!("Failed to send DM for stored reminder. {:?}", why),
-            }
-        }
-        Err(why) => {
-            error!(
-                "Failed to retrieve user from id for stored reminder. {:?}",
-                why
-            );
-        }
-    }
 }
