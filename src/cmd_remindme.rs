@@ -5,14 +5,12 @@ use log::*;
 
 use chrono::Utc;
 use serenity::{
-    framework::standard::Args,
-    framework::standard::{ CommandResult},
-    model::channel::Message,
+    framework::standard::Args, framework::standard::CommandResult, model::channel::Message,
     prelude::Context,
 };
 use std::thread;
 
-pub fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
+pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let args_list = args.raw().collect::<Vec<&str>>();
 
     let time_since_message = Utc::now()
@@ -33,15 +31,18 @@ pub fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResu
         let message_stamp = msg.timestamp.timestamp();
         let user_id = msg.author.id.0;
 
-        let dm_confirm = msg.author.direct_message(&ctx, |m| {
-            m.content(format!("Reminder will be DMed in {}.{}", &reply_msg, {
-                if !msg_private {
-                    " Others can react with 👀 to also be reminded."
-                } else {
-                    ""
-                }
-            }))
-        });
+        let dm_confirm = msg
+            .author
+            .direct_message(&ctx.http, |m| {
+                m.content(format!("Reminder will be DMed in {}.{}", &reply_msg, {
+                    if !msg_private {
+                        " Others can react with 👀 to also be reminded."
+                    } else {
+                        ""
+                    }
+                }))
+            })
+            .await;
 
         match dm_confirm {
             Ok(_x) => {}
@@ -50,7 +51,7 @@ pub fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResu
             }
         }
 
-        let _ = msg.react(&ctx, '👀');
+        let _ = msg.react(&ctx.http, '👀').await;
         let mut msg_url = String::from("Url not found");
         if msg_private {
             msg_url = format!(
@@ -86,7 +87,7 @@ pub fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResu
 
         thread::sleep(std::time::Duration::new(time_to_wait_in_seconds as u64, 0));
 
-        let dm_reminder = msg.author.direct_message(&ctx, |m| m.content(remind_msg));
+        let dm_reminder = msg.author.direct_message(&ctx.http, |m| m.content(remind_msg)).await;
         // let dm_reminder = ctx
         //     .http
         //     .get_user(user_id)?
@@ -94,7 +95,7 @@ pub fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResu
 
         match dm_reminder {
             Ok(_) => {
-                let _ = msg.react(&ctx, '✅');
+                let _ = msg.react(&ctx.http, '✅').await;
                 // let _ = msg.react(&ctx, '👌');
             }
             Err(why) => {
@@ -104,7 +105,7 @@ pub fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResu
             }
         };
     } else {
-        match msg.channel_id.say(&ctx.http, format!("{}", &reply_msg)) {
+        match msg.channel_id.say(&ctx.http, format!("{}", &reply_msg)).await {
             Ok(_x) => {}
             Err(why) => {
                 error!("Error when telling user about parse error. {:?}", why);

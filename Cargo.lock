@@ -163,6 +163,7 @@ dependencies = [
  "serenity",
  "syslog",
  "task_scheduler",
+ "tokio",
 ]
 
 [[package]]

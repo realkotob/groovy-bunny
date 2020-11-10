@@ -1,6 +1,5 @@
 mod announce;
 #[allow(unused_parens)]
-
 extern crate log;
 use log::*;
 mod cmd_remindme;
@@ -8,7 +7,9 @@ mod events;
 mod parse_time;
 mod storage;
 use events::Handler;
+use log_panics;
 use serenity::{
+    async_trait,
     client::Client,
     framework::standard::Args,
     framework::standard::{
@@ -20,20 +21,21 @@ use serenity::{
 };
 use std::fs::File;
 use std::io::prelude::*;
-use syslog::{Facility};
-use log_panics;
+use syslog::Facility;
+use tokio;
 #[group]
 #[commands(help, ping, remindme)]
 struct General;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let init_logger = syslog::init(Facility::LOG_USER, log::LevelFilter::Info, None);
 
     match init_logger {
         Ok(_what) => {}
         Err(err) => error!("Error initializing logger. {:?}", err),
     }
-    
+
     log_panics::init();
 
     let mut file = File::open(".token").unwrap();
@@ -41,21 +43,24 @@ fn main() {
     file.read_to_string(&mut token)
         .expect("Token could not be read");
 
-    let mut client = Client::new(&token, Handler).expect("Error creating client");
+    let new_framework = StandardFramework::new()
+        .configure(|c| c.prefix("!"))
+        .group(&GENERAL_GROUP);
 
-    client.with_framework(
-        StandardFramework::new()
-            .configure(|c| c.prefix("!"))
-            .group(&GENERAL_GROUP),
-    );
-    if let Err(msg) = client.start() {
-        error!("Error: {:?}", msg);
+    let mut client = Client::builder(&token)
+        .event_handler(Handler)
+        .framework(new_framework)
+        .await
+        .expect("Error creating client");
+
+    if let Err(msg) = client.start().await {
+        error!("Client Error: {:?}", msg);
     }
 }
 
 #[command]
-fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
-    match msg.reply(ctx, "Pong") {
+async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
+    match msg.reply(&ctx.http, "Pong").await {
         _ => {}
     };
 
@@ -63,10 +68,11 @@ fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-fn help(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
+async fn help(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     match msg
         .channel_id
         .say(&ctx.http, "Available commands: \n * remindme ")
+        .await
     {
         _ => {}
     };
@@ -74,6 +80,6 @@ fn help(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
 }
 
 #[command]
-fn remindme(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
-    cmd_remindme::remindme(ctx, msg, args)
+async fn remindme(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    cmd_remindme::remindme(ctx, msg, args).await
 }

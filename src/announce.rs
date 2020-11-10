@@ -5,34 +5,37 @@ use std::io::Error;
 extern crate job_scheduler;
 use job_scheduler::{Job, JobScheduler};
 use log::*;
+#[feature(async_closure)]
+use serenity::prelude::Context;
 use std::time::Duration;
 
-use serenity::prelude::Context;
-
-pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
+pub async fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
     let mut sched_worklog = JobScheduler::new();
     let mut sched_qa_dev_reminder = JobScheduler::new();
     let mut sched_qa_day = JobScheduler::new();
 
-    sched_worklog.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
-        match check_work_log(&ctx) {
-            Ok(_x) => info!("Checked worklog loaded."),
-            Err(why) => error!("Error checking worklog {:?}", why),
-        };
+    sched_worklog.add(Job::new("0 0 9 * * FRI".parse().unwrap(), async || {
+        check_work_log(&ctx).await;
+        // match check_work_log(&ctx) {
+        //     Ok(_x) => info!("Checked worklog loaded."),
+        //     Err(why) => error!("Error checking worklog {:?}", why),
+        // };
     }));
 
-    sched_qa_dev_reminder.add(Job::new("0 0 13 * * TUE".parse().unwrap(), || {
-        match send_qa_day_dev_reminder(&ctx) {
-            Ok(_x) => info!("Sent QA day dev reminder."),
-            Err(why) => error!("Error sending QA day dev reminder {:?}", why),
-        };
+    sched_qa_dev_reminder.add(Job::new("0 0 13 * * TUE".parse().unwrap(), async || {
+        send_qa_day_dev_reminder(&ctx).await;
+        // match send_qa_day_dev_reminder(&ctx).await {
+        // Ok(_x) => info!("Sent QA day dev reminder."),
+        // Err(why) => error!("Error sending QA day dev reminder {:?}", why),
+        // };
     }));
 
-    sched_qa_day.add(Job::new("0 0 7 * * WED".parse().unwrap(), || {
-        match send_qa_day_all_reminder(&ctx) {
-            Ok(_x) => info!("Sent QA dev reminder."),
-            Err(why) => error!("Error sending QA day reminder {:?}", why),
-        };
+    sched_qa_day.add(Job::new("0 0 7 * * WED".parse().unwrap(), async || {
+        send_qa_day_all_reminder(&ctx).await;
+        // match send_qa_day_all_reminder(&ctx).await {
+        //     Ok(_x) => info!("Sent QA dev reminder."),
+        //     Err(why) => error!("Error sending QA day reminder {:?}", why),
+        // };
     }));
 
     info!("Scheduled announcement, now entering scheduler loop ...");
@@ -48,10 +51,10 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn send_qa_day_dev_reminder(ctx: &Context) -> Result<(), Error> {
+pub async fn send_qa_day_dev_reminder(ctx: &Context) -> Result<(), Error> {
     let dev_reminder_channel_id: u64 = 705037778471223339;
 
-    let dev_reminder_chan = ctx.http.get_channel(dev_reminder_channel_id);
+    let dev_reminder_chan = ctx.http.get_channel(dev_reminder_channel_id).await;
     let dev_role_id: u64 = 705034249652273153;
 
     let msg_dev_remider = format!(
@@ -63,7 +66,7 @@ pub fn send_qa_day_dev_reminder(ctx: &Context) -> Result<(), Error> {
         Ok(x) => {
             match x.guild() {
                 Some(guild_lock) => {
-                    let say_res = guild_lock.read().say(&ctx.http, msg_dev_remider);
+                    let say_res = guild_lock.say(&ctx.http, msg_dev_remider).await;
                     match say_res {
                         Ok(_x) => {}
                         Err(why) => {
@@ -84,10 +87,10 @@ pub fn send_qa_day_dev_reminder(ctx: &Context) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
+pub async fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
     let dev_reminder_channel_id: u64 = 705090277794119790;
 
-    let dev_reminder_chan = ctx.http.get_channel(dev_reminder_channel_id);
+    let dev_reminder_chan = ctx.http.get_channel(dev_reminder_channel_id).await;
 
     let msg_dev_remider = format!("Today is QA Day! Happy testing @here !",);
 
@@ -95,7 +98,7 @@ pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
         Ok(x) => {
             match x.guild() {
                 Some(guild_lock) => {
-                    let say_res = guild_lock.read().say(&ctx.http, msg_dev_remider);
+                    let say_res = guild_lock.say(&ctx.http, msg_dev_remider).await;
                     match say_res {
                         Ok(_x) => {}
                         Err(why) => {
@@ -116,7 +119,7 @@ pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
+pub async fn check_work_log(ctx: &Context) -> Result<(), Error> {
     let worklog_channel_id: u64 = 705067423530745957; // Real
 
     // let worklog_channel_id: u64 = 774206671358394439; // Test
@@ -132,7 +135,7 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
     ]; // sam 669148598193225739
     let mut did_speak = vec![];
     let mut didnt_speak = vec![];
-    let _messages = channel_id.messages(&ctx.http, |retriever| retriever);
+    let _messages = channel_id.messages(&ctx.http, |retriever| retriever).await;
     let mut didnt_size: u64 = 0;
     let mut did_size: u64 = 0;
     match _messages {
@@ -170,7 +173,7 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
         }
     }
 
-    let work_log_channel = ctx.http.get_channel(worklog_channel_id);
+    let work_log_channel = ctx.http.get_channel(worklog_channel_id).await;
 
     match work_log_channel {
         Ok(x) => {
@@ -185,7 +188,7 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
                             msg_didnt_worklog =
                                 format!("{}{}", &str_mention, &msg_didnt_worklog).to_owned();
                         }
-                        let say_res = guild_lock.read().say(&ctx.http, msg_didnt_worklog);
+                        let say_res = guild_lock.say(&ctx.http, msg_didnt_worklog).await;
                         match say_res {
                             Ok(_x) => {}
                             Err(why) => {
@@ -194,18 +197,19 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
                         }
                     }
                     if did_size > 0 {
-                        let mut names_added = 0;
+                        let mut names_added: u32 = 0;
                         let mut msg_did_worklog = "posted in the past week, congrats!".to_string();
 
                         for elem in did_speak {
-                            let user_res = &ctx.http.get_user(elem);
+                            let user_res = &ctx.http.get_user(elem).await;
                             match user_res {
                                 Ok(x_user) => {
                                     names_added += 1;
                                     let mut user_nick =
                                         x_user.tag().split('#').collect::<Vec<&str>>()[0]
                                             .to_string();
-                                    let nick_res = x_user.nick_in(&ctx.http, 704822217237856298);
+                                    let nick_res =
+                                        x_user.nick_in(&ctx.http, 704822217237856298).await;
                                     match nick_res {
                                         Some(x_nick) => {
                                             user_nick = x_nick;
@@ -221,7 +225,7 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
                             };
                         }
                         if names_added > 0 {
-                            let say_res = guild_lock.read().say(&ctx.http, msg_did_worklog);
+                            let say_res = guild_lock.say(&ctx.http, msg_did_worklog).await;
                             match say_res {
                                 Ok(_x) => {}
                                 Err(why) => {
