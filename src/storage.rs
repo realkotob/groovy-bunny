@@ -1,6 +1,7 @@
 extern crate task_scheduler;
 
 use super::announce;
+use log::{debug, error, info, trace, warn};
 use serenity::prelude::Context;
 use std::fs;
 
@@ -27,7 +28,7 @@ pub fn save_reminder(
     let save_entry = save_entry.replace("\n", "/n");
     let save_entry = format!("{}\n", save_entry);
 
-    println!("* Save entry --> {}", save_entry);
+    debug!("* Save entry --> {}", save_entry);
 
     let path = "cache/data.txt";
 
@@ -48,7 +49,7 @@ pub fn save_reminder(
 }
 
 pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
-    println!("* Try load reminders list.");
+    debug!("* Try load reminders list.");
     use chrono::prelude::*;
     let path = "cache/data.txt";
     use std::sync::{Arc, Mutex};
@@ -109,11 +110,11 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
                         ) {
                             Ok(_x) => {}
                             Err(why) => {
-                                println!("Error saving reminder {:?}", why);
+                                error!("Error saving reminder {:?}", why);
                             }
                         };
                         scheduler.after_duration(Duration::from_secs(final_time_wait), move || {
-                            println!("Remind user {} about {}", user_id, remind_msg);
+                            debug!("Remind user {} about {}", user_id, remind_msg);
 
                             let mut file = File::open(".token").expect("Error opening token file");
                             let mut token = String::new();
@@ -138,14 +139,14 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
         File::create(path).expect("Storage create failed.");
     }
 
-    println!("Reminders loaded from file into memory.");
+    debug!("Reminders loaded from file into memory.");
 
     let cloned_ctx = Arc::clone(&ctx);
     let unlocked_ctx = &*cloned_ctx.lock().unwrap();
 
     match announce::schedule_announcements(unlocked_ctx) {
-        Ok(x) => println!("Scheduled announcements OK."),
-        Err(why) => println!("Error in schedule_announcements. {:?}", why),
+        Ok(x) => info!("Scheduled announcements OK."),
+        Err(why) => error!("Error in schedule_announcements. {:?}", why),
     };
 
     Ok(())

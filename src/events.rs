@@ -2,6 +2,7 @@ use super::announce;
 #[allow(unused_parens)]
 use super::parse_time;
 use super::storage;
+use log::{debug, error, info, trace, warn};
 
 use chrono::Utc;
 
@@ -95,7 +96,7 @@ impl EventHandler for Handler {
                             ) {
                                 Ok(_x) => {}
                                 Err(why) => {
-                                    println!("Error saving reminder {:?}", why);
+                                    error!("Error saving reminder {:?}", why);
                                 }
                             };
                             thread::sleep(std::time::Duration::new(
@@ -111,7 +112,7 @@ impl EventHandler for Handler {
                                     let _ = reaction_msg.react(&ctx, '✅');
                                 }
                                 Err(why) => {
-                                    println!("Err sending DM: {:?}", why);
+                                    error!("Err sending DM: {:?}", why);
                                 }
                             };
                         }
@@ -133,20 +134,20 @@ impl EventHandler for Handler {
                 &_new_message.author.id
             );
             if let Err(err) = _new_message.channel_id.say(&ctx.http, remind_msg) {
-                println!("Error giving message: {:?}", err);
+                error!("Error giving message: {:?}", err);
             }
         }
     }
     fn ready(&self, ctx: Context, ready: Ready) {
-        println!("{} is ready", ready.user.name);
+        info!("{} is ready", ready.user.name);
 
         ctx.set_activity(Activity::playing(&String::from(
             "Oh dear! I shall be too late!",
         )));
 
         match storage::load_reminders(ctx) {
-            Ok(_) => println!("Reminders loaded OK."),
-            Err(why) => println!("Error loading reminders. {:?}", why),
+            Ok(_) => info!("Reminders loaded OK."),
+            Err(why) => error!("Error loading reminders. {:?}", why),
         };
     }
 }

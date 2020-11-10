@@ -4,6 +4,7 @@ use serenity::model::id::ChannelId;
 use std::io::Error;
 extern crate job_scheduler;
 use job_scheduler::{Job, JobScheduler};
+use log::{debug, error, info, trace, warn};
 use std::time::Duration;
 
 use serenity::prelude::Context;
@@ -14,30 +15,27 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
     let mut sched_qa_day = JobScheduler::new();
 
     sched_worklog.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
-        println!("check_work_log ...");
         match check_work_log(&ctx) {
-            Ok(x) => println!("Checked worklog loaded."),
-            Err(why) => println!("Error checking worklog {:?}", why),
+            Ok(x) => info!("Checked worklog loaded."),
+            Err(why) => error!("Error checking worklog {:?}", why),
         };
     }));
 
     sched_qa_dev_reminder.add(Job::new("0 0 13 * * TUE".parse().unwrap(), || {
-        println!("send_qa_day_dev_reminder ...");
         match send_qa_day_dev_reminder(&ctx) {
-            Ok(x) => println!("Sent QA day dev reminder."),
-            Err(why) => println!("Error sending QA day dev reminder {:?}", why),
+            Ok(x) => info!("Sent QA day dev reminder."),
+            Err(why) => error!("Error sending QA day dev reminder {:?}", why),
         };
     }));
 
     sched_qa_day.add(Job::new("0 0 7 * * WED".parse().unwrap(), || {
-        println!("send_qa_day_all_reminder ...");
         match send_qa_day_all_reminder(&ctx) {
-            Ok(x) => println!("Sent QA dev reminder."),
-            Err(why) => println!("Error sending QA day reminder {:?}", why),
+            Ok(x) => info!("Sent QA dev reminder."),
+            Err(why) => error!("Error sending QA day reminder {:?}", why),
         };
     }));
 
-    println!("Scheduled announcement, now entering scheduler loop ...");
+    info!("Scheduled announcement, now entering scheduler loop ...");
 
     loop {
         sched_worklog.tick();
@@ -65,7 +63,13 @@ pub fn send_qa_day_dev_reminder(ctx: &Context) -> Result<(), Error> {
         Ok(x) => {
             match x.guild() {
                 Some(guild_lock) => {
-                    guild_lock.read().say(&ctx.http, msg_dev_remider);
+                    let say_res = guild_lock.read().say(&ctx.http, msg_dev_remider);
+                    match say_res {
+                        Ok(x) => {}
+                        Err(why) => {
+                            error!("Error saying message to dev reminder channel. {:?}", why);
+                        }
+                    }
                 }
                 None => {
                     println!("It's not a guild!");
@@ -73,7 +77,7 @@ pub fn send_qa_day_dev_reminder(ctx: &Context) -> Result<(), Error> {
             };
         }
         Err(why) => {
-            println!("Error sending message to dev reminder channel. {:?}", why);
+            error!("Error getting dev reminder channel. {:?}", why);
         }
     };
 
@@ -91,7 +95,13 @@ pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
         Ok(x) => {
             match x.guild() {
                 Some(guild_lock) => {
-                    guild_lock.read().say(&ctx.http, msg_dev_remider);
+                    let say_res = guild_lock.read().say(&ctx.http, msg_dev_remider);
+                    match say_res {
+                        Ok(x) => {}
+                        Err(why) => {
+                            error!("Error saying message to QA reminder channel. {:?}", why);
+                        }
+                    }
                 }
                 None => {
                     println!("It's not a guild!");
@@ -99,7 +109,7 @@ pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
             };
         }
         Err(why) => {
-            println!("Error sending message to dev reminder channel. {:?}", why);
+            error!("Error sending message to QA reminder channel. {:?}", why);
         }
     };
 
@@ -108,7 +118,7 @@ pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
 
 pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
     let worklog_channel_id: u64 = 705067423530745957; // Real
-    
+
     // let worklog_channel_id: u64 = 774206671358394439; // Test
 
     let channel_id = ChannelId(worklog_channel_id);
@@ -156,7 +166,7 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
             did_size = did_speak.len() as u64;
         }
         Err(why) => {
-            println!("Failed to get messages. {:?}", why);
+            error!("Failed to get messages. {:?}", why);
         }
     }
 
@@ -175,7 +185,13 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
                             msg_didnt_worklog =
                                 format!("{}{}", &str_mention, &msg_didnt_worklog).to_owned();
                         }
-                        guild_lock.read().say(&ctx.http, msg_didnt_worklog);
+                        let say_res = guild_lock.read().say(&ctx.http, msg_didnt_worklog);
+                        match say_res {
+                            Ok(x) => {}
+                            Err(why) => {
+                                error!("Error saying message to work log channel. {:?}", why);
+                            }
+                        }
                     }
                     if (did_size > 0) {
                         let mut names_added = 0;
@@ -200,12 +216,18 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
                                     msg_did_worklog = format!("{} {}", user_nick, &msg_did_worklog);
                                 }
                                 Err(why) => {
-                                    println!("Error getting user with id {}. {:?}", elem, why);
+                                    error!("Error getting user with id {}. {:?}", elem, why);
                                 }
                             };
                         }
                         if (names_added > 0) {
-                            guild_lock.read().say(&ctx.http, msg_did_worklog);
+                            let say_res = guild_lock.read().say(&ctx.http, msg_did_worklog);
+                            match say_res {
+                                Ok(x) => {}
+                                Err(why) => {
+                                    error!("Error saying message to work log channel. {:?}", why);
+                                }
+                            }
                         }
                     }
                 }
@@ -215,7 +237,7 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
             };
         }
         Err(why) => {
-            println!("Error sending message to worklog channel. {:?}", why);
+            error!("Error sending message to worklog channel. {:?}", why);
         }
     };
 

@@ -124,8 +124,10 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "job_scheduler",
+ "log",
  "parking_lot",
  "serenity",
+ "syslog",
  "task_scheduler",
 ]
 
@@ -171,7 +173,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab00a636277f7ea5d8dd92ac7a5099fc9a46e5327bba84d3640b41ae127eada9"
 dependencies = [
  "chrono",
- "error-chain",
+ "error-chain 0.10.0",
  "nom",
 ]
 
@@ -206,6 +208,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9435d864e017c3c6afeac1654189b06cdb491cf2ff73dbf0d73b0f292f42ff8"
 dependencies = [
  "backtrace",
+]
+
+[[package]]
+name = "error-chain"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d2f06b9cac1506ece98fe3231e3cc9c4410ec3d5b1f24ae1c8946f0742cdefc"
+dependencies = [
+ "version_check",
 ]
 
 [[package]]
@@ -1055,6 +1066,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-xid",
+]
+
+[[package]]
+name = "syslog"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a5d8ef1b679c07976f3ee336a436453760c470f54b5e7237556728b8589515d"
+dependencies = [
+ "error-chain 0.12.4",
+ "libc",
+ "log",
+ "time",
 ]
 
 [[package]]
