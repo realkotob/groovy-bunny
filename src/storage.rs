@@ -73,11 +73,22 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
                 // println!("Loaded reminder {}", &rem.as_str());
                 let mut splitter = rem.splitn(4, " ").map(|x| x.to_string());
 
-                let timestamp = splitter.next().unwrap().parse::<i64>().unwrap();
-                let time_to_wait_in_seconds =
-                    splitter.next().unwrap().parse::<i32>().unwrap() as i64;
-                let user_id = splitter.next().unwrap().parse::<u64>().unwrap();
-                let remind_msg = splitter.next().unwrap();
+                let timestamp = splitter
+                    .next()
+                    .unwrap_or_default()
+                    .parse::<i64>()
+                    .unwrap_or_default();
+                let time_to_wait_in_seconds = splitter
+                    .next()
+                    .unwrap_or_default()
+                    .parse::<i32>()
+                    .unwrap_or_default() as i64;
+                let user_id = splitter
+                    .next()
+                    .unwrap_or_default()
+                    .parse::<u64>()
+                    .unwrap_or_default();
+                let remind_msg = splitter.next().unwrap_or("".to_string());
 
                 // From https://stackoverflow.com/a/50072164/13169611
                 let naive = NaiveDateTime::from_timestamp(timestamp, 0);

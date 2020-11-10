@@ -105,7 +105,7 @@ fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
         } else {
             msg_url = format!(
                 "http://discordapp.com/channels/{}/{}/{}",
-                msg.guild_id.unwrap(),
+                msg.guild_id.unwrap_or_default(),
                 msg.channel_id,
                 msg.id
             );

@@ -20,8 +20,8 @@ pub struct HandlerEmpty;
 
 fn split_once(in_string: &str) -> (&str, &str) {
     let mut splitter = in_string.splitn(2, ':');
-    let first = splitter.next().unwrap();
-    let second = splitter.next().unwrap();
+    let first = splitter.next().unwrap_or_default();
+    let second = splitter.next().unwrap_or_default();
     (first, second)
 }
 
@@ -72,7 +72,7 @@ impl EventHandler for Handler {
                             } else {
                                 msg_url = format!(
                                     "http://discordapp.com/channels/{}/{}/{}",
-                                    reaction_msg.guild_id.unwrap(),
+                                    reaction_msg.guild_id.unwrap_or_default(),
                                     reaction_msg.channel_id,
                                     reaction_msg.id
                                 );
