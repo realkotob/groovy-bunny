@@ -57,6 +57,7 @@ fn static_str(s: String) -> &'static str {
 
 pub fn load_reminders() -> Scheduler {
     info!("Try load reminders list.");
+    // println!("Try load reminders list.");
     let path = "cache/data.txt";
 
     let mut scheduler = Scheduler::new();
@@ -150,6 +151,7 @@ pub fn load_reminders() -> Scheduler {
     }
 
     info!("Reminders loaded from file into memory.");
+    println!("Reminders loaded from file into memory.");
 
     scheduler
 }

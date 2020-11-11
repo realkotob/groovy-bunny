@@ -12,10 +12,11 @@ use serenity::prelude::Context;
 use std::time::Duration;
 
 pub fn schedule_announcements() -> JobScheduler {
+    // println!("Try schedule announcments");
     let mut sched_worklog = JobScheduler::new();
 
     sched_worklog.add(Job::new(
-        "0 0 * * * FRI".parse().unwrap(),
+        "0 0 9 * * FRI".parse().unwrap(),
         Box::new(|| {
             Box::pin(async {
                 check_work_log().await;
@@ -41,12 +42,16 @@ pub fn schedule_announcements() -> JobScheduler {
         }),
     ));
 
-    info!("Scheduled announcement, now entering scheduler loop ...");
+    info!("Scheduled announcements.");
+    println!("Scheduled announcements.");
 
     sched_worklog
 }
 
 pub async fn send_qa_day_dev_reminder() {
+    println!("in send_qa_day_dev_reminder");
+    info!("in send_qa_day_dev_reminder");
+
     let ctx_http = globalstate::make_http();
 
     let dev_reminder_channel_id: u64 = 705037778471223339; // Real
@@ -85,6 +90,9 @@ pub async fn send_qa_day_dev_reminder() {
 }
 
 pub async fn send_qa_day_all_reminder() {
+    println!("in send_qa_day_all_reminder");
+    info!("in send_qa_day_all_reminder");
+
     let ctx_http = globalstate::make_http();
 
     let dev_reminder_channel_id: u64 = 705090277794119790; // Real
@@ -119,6 +127,9 @@ pub async fn send_qa_day_all_reminder() {
 }
 
 pub async fn check_work_log() {
+    println!("in check_work_log");
+    info!("in check_work_log");
+
     let ctx_http = globalstate::make_http();
 
     let worklog_channel_id: u64 = 705067423530745957; // Real

@@ -29,8 +29,9 @@ use std::fs::File;
 use std::io::prelude::*;
 use syslog::Facility;
 use tokio;
+// #[commands(help, ping, remindme)]
 #[group]
-#[commands(help, ping, remindme)]
+#[commands(help, ping)]
 struct General;
 
 #[tokio::main]
@@ -59,13 +60,6 @@ async fn main() {
     if let Err(msg) = client.start().await {
         error!("Client Error: {:?}", msg);
     }
-
-    loop {
-        announce::schedule_announcements().tick().await;
-        storage::load_reminders().tick().await;
-
-        std::thread::sleep(std::time::Duration::from_millis(500));
-    }
 }
 
 #[command]
@@ -89,7 +83,7 @@ async fn help(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     Ok(())
 }
 
-#[command]
-async fn remindme(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    cmd_remindme::remindme(ctx, msg, args).await
-}
+// #[command]
+// async fn remindme(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+//     cmd_remindme::remindme(ctx, msg, args).await
+// }

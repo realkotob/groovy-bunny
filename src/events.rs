@@ -166,10 +166,22 @@ impl EventHandler for Handler {
     }
     async fn ready(&self, ctx: Context, ready: Ready) {
         info!("{} is ready", ready.user.name);
+        println!("{} is ready", ready.user.name);
 
         ctx.set_activity(Activity::playing(&String::from(
             "Oh dear! I shall be too late!",
         )))
         .await;
+
+        let mut announcer = announce::schedule_announcements();
+        let mut reminder = storage::load_reminders();
+        println!("Initialized announcer & reminder.");
+        loop {
+            // println!("Tick loop");
+            announcer.tick().await;
+            reminder.tick().await;
+
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        }
     }
 }
