@@ -1,9 +1,11 @@
+use super::announce;
 #[allow(unused_parens)]
 use super::parse_time;
 use super::storage;
-use log::*;
-
 use chrono::Utc;
+use futures::join;
+use log::*;
+use std::sync::Arc;
 
 extern crate job_scheduler;
 
@@ -93,6 +95,7 @@ impl EventHandler for Handler {
                             }
                             // TODO Add rest of the arguments to the message
                             let remind_msg = format!("Reminder for link: {}", &msg_url);
+                            let a_remind_msg = Arc::new(remind_msg);
                             let dm_confirm = reaction.user(&ctx.http).await.unwrap().direct_message(&ctx, |m| {
                                 m.content(format!(
                                     "Reminder will be DMed in {} from original message date. Others can react with 👀 to also be reminded.",
@@ -110,7 +113,7 @@ impl EventHandler for Handler {
                                 reaction_msg.timestamp.timestamp(),
                                 time_to_wait_in_seconds,
                                 *user_id,
-                                remind_msg.to_string(),
+                                Arc::clone(&a_remind_msg),
                             ) {
                                 Ok(_x) => {}
                                 Err(why) => {
@@ -125,7 +128,7 @@ impl EventHandler for Handler {
                                 .user(&ctx)
                                 .await
                                 .unwrap()
-                                .direct_message(&ctx.http, |m| m.content(remind_msg))
+                                .direct_message(&ctx.http, |m| m.content(Arc::clone(&a_remind_msg)))
                                 .await;
                             match dm {
                                 Ok(_) => {
@@ -164,10 +167,5 @@ impl EventHandler for Handler {
         ctx.set_activity(Activity::playing(&String::from(
             "Oh dear! I shall be too late!",
         )));
-
-        match storage::load_reminders(ctx).await {
-            Ok(_) => info!("Reminders loaded OK."),
-            Err(why) => error!("Error loading reminders. {:?}", why),
-        };
     }
 }

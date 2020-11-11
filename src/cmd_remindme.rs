@@ -8,6 +8,7 @@ use serenity::{
     framework::standard::Args, framework::standard::CommandResult, model::channel::Message,
     prelude::Context,
 };
+use std::sync::Arc;
 use std::thread;
 
 pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -67,11 +68,12 @@ pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
             );
         }
         let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
+        let a_remind_msg = Arc::new(remind_msg);
         match storage::save_reminder(
             message_stamp,
             time_to_wait_in_seconds,
             user_id,
-            remind_msg.to_string(),
+            Arc::clone(&a_remind_msg),
         ) {
             Ok(_x) => {}
             Err(why) => error!("Error saving remider. {:?}", why),
@@ -87,7 +89,10 @@ pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
 
         thread::sleep(std::time::Duration::new(time_to_wait_in_seconds as u64, 0));
 
-        let dm_reminder = msg.author.direct_message(&ctx.http, |m| m.content(remind_msg)).await;
+        let dm_reminder = msg
+            .author
+            .direct_message(&ctx.http, |m| m.content(a_remind_msg))
+            .await;
         // let dm_reminder = ctx
         //     .http
         //     .get_user(user_id)?
@@ -105,7 +110,11 @@ pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
             }
         };
     } else {
-        match msg.channel_id.say(&ctx.http, format!("{}", &reply_msg)).await {
+        match msg
+            .channel_id
+            .say(&ctx.http, format!("{}", &reply_msg))
+            .await
+        {
             Ok(_x) => {}
             Err(why) => {
                 error!("Error when telling user about parse error. {:?}", why);

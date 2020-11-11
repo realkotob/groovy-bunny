@@ -11,13 +11,13 @@ use log::*;
 use serenity::prelude::Context;
 use std::time::Duration;
 
-pub async fn schedule_announcements() -> Result<(), Error> {
+pub async fn schedule_announcements() {
     let mut sched_worklog = JobScheduler::new();
     let mut sched_qa_dev_reminder = JobScheduler::new();
     let mut sched_qa_day = JobScheduler::new();
 
     sched_worklog.add(Job::new(
-        "0 0 9 * * FRI".parse().unwrap(),
+        "1/15 * * * * *".parse().unwrap(),
         Box::new(|| {
             Box::pin(async {
                 check_work_log().await;
@@ -26,7 +26,7 @@ pub async fn schedule_announcements() -> Result<(), Error> {
     ));
 
     sched_qa_dev_reminder.add(Job::new(
-        "0 0 13 * * TUE".parse().unwrap(),
+        "1/10 * * * * *".parse().unwrap(),
         Box::new(|| {
             Box::pin(async {
                 send_qa_day_dev_reminder().await;
@@ -35,7 +35,7 @@ pub async fn schedule_announcements() -> Result<(), Error> {
     ));
 
     sched_qa_day.add(Job::new(
-        "0 0 7 * * WED".parse().unwrap(),
+        "1/20 * * * * *".parse().unwrap(),
         Box::new(|| {
             Box::pin(async {
                 send_qa_day_all_reminder().await;
@@ -46,20 +46,21 @@ pub async fn schedule_announcements() -> Result<(), Error> {
     info!("Scheduled announcement, now entering scheduler loop ...");
 
     loop {
-        sched_worklog.tick();
-        sched_qa_dev_reminder.tick();
-        sched_qa_day.tick();
+        sched_worklog.tick().await;
+        sched_qa_dev_reminder.tick().await;
+        sched_qa_day.tick().await;
 
         std::thread::sleep(Duration::from_millis(500));
     }
 
-    Ok(())
 }
 
 pub async fn send_qa_day_dev_reminder() -> Result<(), Error> {
     let ctx_http = globalstate::make_http();
 
-    let dev_reminder_channel_id: u64 = 705037778471223339;
+    let dev_reminder_channel_id: u64 = 705037778471223339; // Real
+
+    let dev_reminder_channel_id: u64 = 775708031668977666; // Test
 
     let dev_reminder_chan = ctx_http.get_channel(dev_reminder_channel_id).await;
     let dev_role_id: u64 = 705034249652273153;
@@ -97,7 +98,9 @@ pub async fn send_qa_day_dev_reminder() -> Result<(), Error> {
 pub async fn send_qa_day_all_reminder() -> Result<(), Error> {
     let ctx_http = globalstate::make_http();
 
-    let dev_reminder_channel_id: u64 = 705090277794119790;
+    let dev_reminder_channel_id: u64 = 705090277794119790; // Real
+
+    let dev_reminder_channel_id: u64 = 775708031668977666; // Test
 
     let dev_reminder_chan = ctx_http.get_channel(dev_reminder_channel_id).await;
 
@@ -133,7 +136,7 @@ pub async fn check_work_log() -> Result<(), Error> {
 
     let worklog_channel_id: u64 = 705067423530745957; // Real
 
-    // let worklog_channel_id: u64 = 774206671358394439; // Test
+    let worklog_channel_id: u64 = 775708031668977666; // Test
 
     let channel_id = ChannelId(worklog_channel_id);
 

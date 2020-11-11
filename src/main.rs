@@ -8,6 +8,7 @@ mod globalstate;
 mod parse_time;
 mod storage;
 use events::Handler;
+use futures::join;
 use log_panics;
 
 use serenity::{
@@ -29,19 +30,6 @@ use tokio;
 #[commands(help, ping, remindme)]
 struct General;
 
-use lazy_static::lazy_static;
-
-lazy_static! {
-    static ref TOKEN: String = {
-        let mut file = File::open(".token").unwrap();
-        let mut token = String::new();
-        file.read_to_string(&mut token)
-            .expect("Token could not be read");
-
-        token
-    };
-}
-
 #[tokio::main]
 async fn main() {
     let init_logger = syslog::init(Facility::LOG_USER, log::LevelFilter::Info, None);
@@ -53,11 +41,13 @@ async fn main() {
 
     log_panics::init();
 
+    let TOKEN = globalstate::get_token();
+
     let new_framework = StandardFramework::new()
         .configure(|c| c.prefix("!"))
         .group(&GENERAL_GROUP);
 
-    let mut client = Client::builder(globalstate::get_token())
+    let mut client = Client::builder(TOKEN)
         .event_handler(Handler)
         .framework(new_framework)
         .await
@@ -66,6 +56,11 @@ async fn main() {
     if let Err(msg) = client.start().await {
         error!("Client Error: {:?}", msg);
     }
+    
+    join!(
+        announce::schedule_announcements(),
+        storage::load_reminders()
+    );
 }
 
 #[command]
