@@ -11,10 +11,8 @@ use log::*;
 use serenity::prelude::Context;
 use std::time::Duration;
 
-pub async fn schedule_announcements() {
+pub fn schedule_announcements() -> JobScheduler {
     let mut sched_worklog = JobScheduler::new();
-    let mut sched_qa_dev_reminder = JobScheduler::new();
-    let mut sched_qa_day = JobScheduler::new();
 
     sched_worklog.add(Job::new(
         "1/15 * * * * *".parse().unwrap(),
@@ -25,7 +23,7 @@ pub async fn schedule_announcements() {
         }),
     ));
 
-    sched_qa_dev_reminder.add(Job::new(
+    sched_worklog.add(Job::new(
         "1/10 * * * * *".parse().unwrap(),
         Box::new(|| {
             Box::pin(async {
@@ -34,7 +32,7 @@ pub async fn schedule_announcements() {
         }),
     ));
 
-    sched_qa_day.add(Job::new(
+    sched_worklog.add(Job::new(
         "1/20 * * * * *".parse().unwrap(),
         Box::new(|| {
             Box::pin(async {
@@ -45,14 +43,7 @@ pub async fn schedule_announcements() {
 
     info!("Scheduled announcement, now entering scheduler loop ...");
 
-    loop {
-        sched_worklog.tick().await;
-        sched_qa_dev_reminder.tick().await;
-        sched_qa_day.tick().await;
-
-        std::thread::sleep(Duration::from_millis(500));
-    }
-
+    sched_worklog
 }
 
 pub async fn send_qa_day_dev_reminder() -> Result<(), Error> {

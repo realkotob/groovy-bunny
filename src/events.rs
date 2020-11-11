@@ -6,6 +6,8 @@ use chrono::Utc;
 use futures::join;
 use log::*;
 use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
 
 extern crate job_scheduler;
 
@@ -166,6 +168,9 @@ impl EventHandler for Handler {
 
         ctx.set_activity(Activity::playing(&String::from(
             "Oh dear! I shall be too late!",
-        )));
+        )))
+        .await;
+
+       
     }
 }

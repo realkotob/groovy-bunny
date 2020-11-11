@@ -3,6 +3,7 @@ use std::io::prelude::*;
 
 use serenity;
 use std;
+use std::time::Duration;
 
 use lazy_static::lazy_static;
 
@@ -16,7 +17,6 @@ lazy_static! {
         token
     };
 }
-
 
 pub fn get_token() -> String {
     // let mut file = File::open(".token").unwrap();

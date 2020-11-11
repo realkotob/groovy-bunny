@@ -1,4 +1,3 @@
-extern crate task_scheduler;
 #[allow(unused_parens)]
 use super::announce;
 use chrono::prelude::*;
@@ -12,6 +11,7 @@ use std::fs::OpenOptions;
 use std::io::{Error, Read, Write};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use task_scheduler;
 use task_scheduler::Scheduler;
 
 pub fn save_reminder(
@@ -55,7 +55,7 @@ fn static_str(s: String) -> &'static str {
     Box::leak(s.into_boxed_str())
 }
 
-pub async fn load_reminders() {
+pub fn load_reminders() -> Scheduler {
     info!("Try load reminders list.");
     let path = "cache/data.txt";
 
@@ -143,7 +143,7 @@ pub async fn load_reminders() {
 
     info!("Reminders loaded from file into memory.");
 
-    scheduler.tick().await
+    scheduler
 }
 async fn executed_reminder(user_id: u64, remind_msg: &'static str) {
     let ctx_http = super::globalstate::make_http();

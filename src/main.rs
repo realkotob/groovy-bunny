@@ -1,7 +1,9 @@
 mod announce;
+extern crate job_scheduler;
 #[allow(unused_parens)]
 extern crate log;
 use log::*;
+use task_scheduler;
 mod cmd_remindme;
 mod events;
 mod globalstate;
@@ -10,6 +12,7 @@ mod storage;
 use events::Handler;
 use futures::join;
 use log_panics;
+use std::time::Duration;
 
 use serenity::{
     async_trait,
@@ -56,11 +59,13 @@ async fn main() {
     if let Err(msg) = client.start().await {
         error!("Client Error: {:?}", msg);
     }
-    
-    join!(
-        announce::schedule_announcements(),
-        storage::load_reminders()
-    );
+
+    loop {
+        announce::schedule_announcements().tick().await;
+        storage::load_reminders().tick().await;
+
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    }
 }
 
 #[command]
