@@ -15,7 +15,7 @@ pub fn schedule_announcements() -> JobScheduler {
     let mut sched_worklog = JobScheduler::new();
 
     sched_worklog.add(Job::new(
-        "1/15 * * * * *".parse().unwrap(),
+        "0 0 * * * FRI".parse().unwrap(),
         Box::new(|| {
             Box::pin(async {
                 check_work_log().await;
@@ -24,7 +24,7 @@ pub fn schedule_announcements() -> JobScheduler {
     ));
 
     sched_worklog.add(Job::new(
-        "1/10 * * * * *".parse().unwrap(),
+        "0 0 13 * * TUE".parse().unwrap(),
         Box::new(|| {
             Box::pin(async {
                 send_qa_day_dev_reminder().await;
@@ -33,7 +33,7 @@ pub fn schedule_announcements() -> JobScheduler {
     ));
 
     sched_worklog.add(Job::new(
-        "1/20 * * * * *".parse().unwrap(),
+        "0 0 7 * * WED".parse().unwrap(),
         Box::new(|| {
             Box::pin(async {
                 send_qa_day_all_reminder().await;
@@ -46,12 +46,12 @@ pub fn schedule_announcements() -> JobScheduler {
     sched_worklog
 }
 
-pub async fn send_qa_day_dev_reminder() -> Result<(), Error> {
+pub async fn send_qa_day_dev_reminder() {
     let ctx_http = globalstate::make_http();
 
     let dev_reminder_channel_id: u64 = 705037778471223339; // Real
 
-    let dev_reminder_channel_id: u64 = 775708031668977666; // Test
+    // let dev_reminder_channel_id: u64 = 775708031668977666; // Test
 
     let dev_reminder_chan = ctx_http.get_channel(dev_reminder_channel_id).await;
     let dev_role_id: u64 = 705034249652273153;
@@ -82,16 +82,14 @@ pub async fn send_qa_day_dev_reminder() -> Result<(), Error> {
             error!("Error getting dev reminder channel. {:?}", why);
         }
     };
-
-    Ok(())
 }
 
-pub async fn send_qa_day_all_reminder() -> Result<(), Error> {
+pub async fn send_qa_day_all_reminder() {
     let ctx_http = globalstate::make_http();
 
     let dev_reminder_channel_id: u64 = 705090277794119790; // Real
 
-    let dev_reminder_channel_id: u64 = 775708031668977666; // Test
+    // let dev_reminder_channel_id: u64 = 775708031668977666; // Test
 
     let dev_reminder_chan = ctx_http.get_channel(dev_reminder_channel_id).await;
 
@@ -118,16 +116,14 @@ pub async fn send_qa_day_all_reminder() -> Result<(), Error> {
             error!("Error sending message to QA reminder channel. {:?}", why);
         }
     };
-
-    Ok(())
 }
 
-pub async fn check_work_log() -> Result<(), Error> {
+pub async fn check_work_log() {
     let ctx_http = globalstate::make_http();
 
     let worklog_channel_id: u64 = 705067423530745957; // Real
 
-    let worklog_channel_id: u64 = 775708031668977666; // Test
+    // let worklog_channel_id: u64 = 775708031668977666; // Test
 
     let channel_id = ChannelId(worklog_channel_id);
 
@@ -249,6 +245,4 @@ pub async fn check_work_log() -> Result<(), Error> {
             error!("Error sending message to worklog channel. {:?}", why);
         }
     };
-
-    Ok(())
 }

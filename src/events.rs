@@ -97,7 +97,6 @@ impl EventHandler for Handler {
                             }
                             // TODO Add rest of the arguments to the message
                             let remind_msg = format!("Reminder for link: {}", &msg_url);
-                            let a_remind_msg = Arc::new(remind_msg);
                             let dm_confirm = reaction.user(&ctx.http).await.unwrap().direct_message(&ctx, |m| {
                                 m.content(format!(
                                     "Reminder will be DMed in {} from original message date. Others can react with 👀 to also be reminded.",
@@ -115,7 +114,7 @@ impl EventHandler for Handler {
                                 reaction_msg.timestamp.timestamp(),
                                 time_to_wait_in_seconds,
                                 *user_id,
-                                Arc::clone(&a_remind_msg),
+                                &remind_msg,
                             ) {
                                 Ok(_x) => {}
                                 Err(why) => {
@@ -126,15 +125,17 @@ impl EventHandler for Handler {
                                 time_to_wait_in_seconds as u64,
                                 0,
                             ));
+
+                            let ctx_http = super::globalstate::make_http();
                             let dm = &reaction
-                                .user(&ctx)
+                                .user(&ctx_http)
                                 .await
                                 .unwrap()
-                                .direct_message(&ctx.http, |m| m.content(Arc::clone(&a_remind_msg)))
+                                .direct_message(&ctx_http, |m| m.content(&remind_msg))
                                 .await;
                             match dm {
                                 Ok(_) => {
-                                    let _ = reaction_msg.react(&ctx, '✅');
+                                    let _ = reaction_msg.react(&ctx_http, '✅');
                                 }
                                 Err(why) => {
                                     error!("Err sending DM: {:?}", why);
@@ -170,7 +171,5 @@ impl EventHandler for Handler {
             "Oh dear! I shall be too late!",
         )))
         .await;
-
-       
     }
 }

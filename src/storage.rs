@@ -18,14 +18,14 @@ pub fn save_reminder(
     timestamp: i64,
     time_to_wait: i32,
     user_id: u64,
-    remind_msg: Arc<String>,
+    remind_msg: &String,
 ) -> Result<(), Error> {
     let save_entry = format!(
         "{} {} {} {}",
         timestamp.to_string(),
         time_to_wait.to_string(),
         user_id.to_string(),
-        remind_msg
+        remind_msg.to_string()
     );
 
     let save_entry = save_entry.replace("\n", "/n");
@@ -59,7 +59,7 @@ pub fn load_reminders() -> Scheduler {
     info!("Try load reminders list.");
     let path = "cache/data.txt";
 
-    let scheduler = Scheduler::new();
+    let mut scheduler = Scheduler::new();
 
     if fs::metadata(path).is_ok() {
         let mut file = File::open(path).expect("File open failed");
@@ -90,9 +90,9 @@ pub fn load_reminders() -> Scheduler {
                     .unwrap_or_default()
                     .parse::<u64>()
                     .unwrap_or_default();
-                let remind_msg = splitter.next().unwrap_or("".to_string());
+                let remind_msg = splitter.next().unwrap_or("".to_string()).to_owned();
 
-                let a_remind_msg = Arc::new(remind_msg);
+                let a_remind_msg = remind_msg.clone();
 
                 // From https://stackoverflow.com/a/50072164/13169611
                 let naive = NaiveDateTime::from_timestamp(timestamp, 0);
@@ -103,7 +103,7 @@ pub fn load_reminders() -> Scheduler {
                 if time_since_message < time_to_wait_in_seconds {
                     println!(
                         "Schedule loaded reminder. user: {} msg: {}",
-                        user_id, a_remind_msg
+                        user_id, remind_msg
                     );
 
                     let final_time_wait = (time_to_wait_in_seconds - time_since_message) as u64;
@@ -112,7 +112,7 @@ pub fn load_reminders() -> Scheduler {
                             timestamp,
                             time_to_wait_in_seconds as i32,
                             user_id,
-                            Arc::clone(&a_remind_msg),
+                            &remind_msg,
                         ) {
                             Ok(_x) => {}
                             Err(why) => {
@@ -120,14 +120,22 @@ pub fn load_reminders() -> Scheduler {
                             }
                         };
 
-                        // let cloned_a = static_str(Arc::clone(&a_remind_msg));
+                        let mut cloned_a = a_remind_msg.to_owned();
+                        let captured: &'static str =
+                            static_str((&cloned_a).clone().as_str().to_owned());
+
+                        let mut captured = Arc::new(Mutex::new(a_remind_msg.clone()));
+
+                        let mut c_captured = captured.clone();
+                        // executed_reminder(user_id, captured);
 
                         scheduler.after_duration(
                             Duration::from_secs(final_time_wait),
                             Box::new(move || {
                                 Box::pin(async {
                                     // FIXME String does not live long enough
-                                    // executed_reminder(user_id, Arc::clone(&a_remind_msg)).await;
+                                    // println!("{}", c_captured.lock().unwrap());
+                                    // executed_reminder(user_id, captured).await;
                                 })
                             }),
                         );

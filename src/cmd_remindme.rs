@@ -68,12 +68,11 @@ pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
             );
         }
         let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
-        let a_remind_msg = Arc::new(remind_msg);
         match storage::save_reminder(
             message_stamp,
             time_to_wait_in_seconds,
             user_id,
-            Arc::clone(&a_remind_msg),
+            &remind_msg,
         ) {
             Ok(_x) => {}
             Err(why) => error!("Error saving remider. {:?}", why),
@@ -89,9 +88,11 @@ pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
 
         thread::sleep(std::time::Duration::new(time_to_wait_in_seconds as u64, 0));
 
+        let ctx_http = super::globalstate::make_http();
+
         let dm_reminder = msg
             .author
-            .direct_message(&ctx.http, |m| m.content(a_remind_msg))
+            .direct_message(&ctx_http, |m| m.content(&remind_msg))
             .await;
         // let dm_reminder = ctx
         //     .http
@@ -100,7 +101,7 @@ pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
 
         match dm_reminder {
             Ok(_) => {
-                let _ = msg.react(&ctx.http, '✅').await;
+                let _ = msg.react(&ctx_http, '✅').await;
                 // let _ = msg.react(&ctx, '👌');
             }
             Err(why) => {
