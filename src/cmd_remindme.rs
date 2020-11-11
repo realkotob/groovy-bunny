@@ -68,12 +68,7 @@ pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
             );
         }
         let remind_msg = format!("Reminder: \"{}\" \nLink: {}", args.rest(), &msg_url);
-        match storage::save_reminder(
-            message_stamp,
-            time_to_wait_in_seconds,
-            user_id,
-            &remind_msg,
-        ) {
+        match storage::save_reminder(message_stamp, time_to_wait_in_seconds, user_id, &remind_msg) {
             Ok(_x) => {}
             Err(why) => error!("Error saving remider. {:?}", why),
         };
@@ -86,6 +81,7 @@ pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
         //     &msg_url
         // );
 
+        // FIXME This blocks the tick loop so the command is temporarily disabled
         thread::sleep(std::time::Duration::new(time_to_wait_in_seconds as u64, 0));
 
         let ctx_http = super::globalstate::make_http();

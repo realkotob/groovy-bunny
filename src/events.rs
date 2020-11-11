@@ -95,7 +95,6 @@ impl EventHandler for Handler {
                                     reaction_msg.id
                                 );
                             }
-                            // TODO Add rest of the arguments to the message
                             let remind_msg = format!("Reminder for link: {}", &msg_url);
                             let dm_confirm = reaction.user(&ctx.http).await.unwrap().direct_message(&ctx, |m| {
                                 m.content(format!(
