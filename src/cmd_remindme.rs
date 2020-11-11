@@ -12,6 +12,13 @@ use std::sync::Arc;
 use std::thread;
 
 pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let _ = msg.react(&ctx.http, '❌').await;
+
+    println!("Send X emoji");
+
+    Ok(())
+}
+pub async fn remindme_old(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let args_list = args.raw().collect::<Vec<&str>>();
 
     let time_since_message = Utc::now()
@@ -25,6 +32,8 @@ pub async fn remindme(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
         // Consume the arguments that were processed above
         args.advance();
     }
+
+    let _ = msg.react(&ctx.http, '❌').await;
 
     if time_to_wait_in_seconds > 0 {
         let msg_private = msg.is_private();

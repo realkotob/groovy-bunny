@@ -29,9 +29,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use syslog::Facility;
 use tokio;
-// #[commands(help, ping, remindme)]
 #[group]
-#[commands(help, ping)]
+#[commands(help, ping, remindme)]
 struct General;
 
 #[tokio::main]
@@ -83,9 +82,8 @@ async fn help(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     Ok(())
 }
 
-// NOTE This command is temporarily disabled since it blocks the tick loop
-// See the fixme note inside the function
-// #[command]
-// async fn remindme(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-//     cmd_remindme::remindme(ctx, msg, args).await
-// }
+
+#[command]
+async fn remindme(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    cmd_remindme::remindme(ctx, msg, args).await
+}
