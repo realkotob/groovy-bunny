@@ -1,9 +1,9 @@
-use super::globalstate;
 #[allow(unused_parens)]
 use super::parse_time;
 use super::storage;
-use chrono::Utc;
 use log::*;
+
+use chrono::Utc;
 
 extern crate job_scheduler;
 
@@ -110,13 +110,22 @@ impl EventHandler for Handler {
                                     error!("Error saving reminder {:?}", why);
                                 }
                             };
-
                             thread::sleep(std::time::Duration::new(
                                 time_to_wait_in_seconds as u64,
                                 0,
                             ));
-
-                            storage::send_reminder(user_id.clone(), remind_msg);
+                            let dm = &reaction
+                                .user(&ctx)
+                                .unwrap()
+                                .direct_message(&ctx.http, |m| m.content(remind_msg));
+                            match dm {
+                                Ok(_) => {
+                                    let _ = reaction_msg.react(&ctx, '✅');
+                                }
+                                Err(why) => {
+                                    error!("Err sending DM: {:?}", why);
+                                }
+                            };
                         }
                     }
                     ()
@@ -147,7 +156,7 @@ impl EventHandler for Handler {
             "Oh dear! I shall be too late!",
         )));
 
-        match storage::load_reminders() {
+        match storage::load_reminders(ctx) {
             Ok(_) => info!("Reminders loaded OK."),
             Err(why) => error!("Error loading reminders. {:?}", why),
         };

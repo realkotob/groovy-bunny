@@ -1,7 +1,6 @@
 extern crate task_scheduler;
 #[allow(unused_parens)]
 use super::announce;
-use super::globalstate;
 use log::*;
 use serenity::prelude::Context;
 use std::fs;
@@ -9,7 +8,6 @@ use std::fs;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{Error, Read, Write};
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use task_scheduler::Scheduler;
 
@@ -50,10 +48,13 @@ pub fn save_reminder(
     Ok(())
 }
 
-pub fn load_reminders() -> Result<(), Error> {
+pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
     info!("Try load reminders list.");
     use chrono::prelude::*;
     let path = "cache/data.txt";
+    use std::sync::{Arc, Mutex};
+
+    let ctx = Arc::new(Mutex::new(ctx_src));
 
     if fs::metadata(path).is_ok() {
         let mut file = File::open(path).expect("File open failed");
@@ -67,6 +68,8 @@ pub fn load_reminders() -> Result<(), Error> {
         File::create(path).expect("Storage create failed.");
 
         for rem in split_args {
+            let cloned_ctx = Arc::clone(&ctx);
+
             if rem.len() > 8 {
                 // println!("Loaded reminder {}", &rem.as_str());
                 let mut splitter = rem.splitn(4, " ").map(|x| x.to_string());
@@ -114,7 +117,34 @@ pub fn load_reminders() -> Result<(), Error> {
                             }
                         };
                         scheduler.after_duration(Duration::from_secs(final_time_wait), move || {
-                            send_reminder(user_id, remind_msg);
+                            info!("Remind user {} about {}", user_id, remind_msg);
+
+                            let unlocked_ctx = &*cloned_ctx.lock().unwrap();
+                            let remind_msg = remind_msg.replace("/n", "\n");
+
+                            let res_user = unlocked_ctx.http.get_user(user_id);
+
+                            match res_user {
+                                Ok(user_unwrapped) => {
+                                    let dm_result = user_unwrapped
+                                        .direct_message(unlocked_ctx, move |m| {
+                                            m.content(remind_msg)
+                                        });
+                                    match dm_result {
+                                        Ok(_) => {}
+                                        Err(why) => error!(
+                                            "Failed to send DM for stored reminder. {:?}",
+                                            why
+                                        ),
+                                    }
+                                }
+                                Err(why) => {
+                                    error!(
+                                        "Failed to retrieve user from id for stored reminder. {:?}",
+                                        why
+                                    );
+                                }
+                            }
                         });
                     }
                 }
@@ -128,38 +158,13 @@ pub fn load_reminders() -> Result<(), Error> {
 
     info!("Reminders loaded from file into memory.");
 
-    match announce::schedule_announcements() {
+    let cloned_ctx = Arc::clone(&ctx);
+    let unlocked_ctx = &*cloned_ctx.lock().unwrap();
+
+    match announce::schedule_announcements(unlocked_ctx) {
         Ok(_x) => info!("Scheduled announcements OK."),
         Err(why) => error!("Error in schedule_announcements. {:?}", why),
     };
 
     Ok(())
-}
-
-pub fn send_reminder(user_id: u64, remind_msg: String) {
-    info!("Remind user {} about {}", user_id, remind_msg);
-
-    let ctx_http = globalstate::make_http();
-
-    let remind_msg = remind_msg.replace("/n", "\n");
-
-    let res_user = ctx_http.get_user(user_id);
-
-    match res_user {
-        Ok(user_unwrapped) => {
-            let dm_result = user_unwrapped.direct_message(ctx_http, move |m| m.content(remind_msg));
-            match dm_result {
-                Ok(_) => {
-                    // let _ = msg.react(&ctx_http, '✅');
-                }
-                Err(why) => error!("Failed to send DM for stored reminder. {:?}", why),
-            }
-        }
-        Err(why) => {
-            error!(
-                "Failed to retrieve user from id for stored reminder. {:?}",
-                why
-            );
-        }
-    }
 }

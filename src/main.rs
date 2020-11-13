@@ -1,15 +1,13 @@
 mod announce;
 #[allow(unused_parens)]
+
 extern crate log;
 use log::*;
 mod cmd_remindme;
 mod events;
-mod globalstate;
 mod parse_time;
 mod storage;
-
 use events::Handler;
-use log_panics;
 use serenity::{
     client::Client,
     framework::standard::Args,
@@ -22,7 +20,8 @@ use serenity::{
 };
 use std::fs::File;
 use std::io::prelude::*;
-use syslog::Facility;
+use syslog::{Facility};
+use log_panics;
 #[group]
 #[commands(help, ping, remindme)]
 struct General;
@@ -34,7 +33,7 @@ fn main() {
         Ok(_what) => {}
         Err(err) => error!("Error initializing logger. {:?}", err),
     }
-
+    
     log_panics::init();
 
     let mut file = File::open(".token").unwrap();

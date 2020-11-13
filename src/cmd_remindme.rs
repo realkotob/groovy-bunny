@@ -5,7 +5,9 @@ use log::*;
 
 use chrono::Utc;
 use serenity::{
-    framework::standard::Args, framework::standard::CommandResult, model::channel::Message,
+    framework::standard::Args,
+    framework::standard::{ CommandResult},
+    model::channel::Message,
     prelude::Context,
 };
 use std::thread;
@@ -74,9 +76,40 @@ pub fn remindme(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResu
             Err(why) => error!("Error saving remider. {:?}", why),
         };
 
+        //// Alternative way to mention player instead of `msg.reply`
+        // let remind_msg = format!(
+        //     "Reminder <@{}>: {} \nLink: {}",
+        //     &msg.author.id,
+        //     args.rest(),
+        //     &msg_url
+        // );
+
         thread::sleep(std::time::Duration::new(time_to_wait_in_seconds as u64, 0));
 
-        storage::send_reminder(user_id, remind_msg);
+        let dm_reminder = msg.author.direct_message(&ctx, |m| m.content(remind_msg));
+        // let dm_reminder = ctx
+        //     .http
+        //     .get_user(user_id)?
+        //     .direct_message(&ctx, |m| m.content(remind_msg));
+
+        match dm_reminder {
+            Ok(_) => {
+                let _ = msg.react(&ctx, '✅');
+                // let _ = msg.react(&ctx, '👌');
+            }
+            Err(why) => {
+                error!("Err sending DM: {:?}", why);
+
+                // let _ = msg.reply(&ctx, "There was an error DMing you help.");
+            }
+        };
+    } else {
+        match msg.channel_id.say(&ctx.http, format!("{}", &reply_msg)) {
+            Ok(_x) => {}
+            Err(why) => {
+                error!("Error when telling user about parse error. {:?}", why);
+            }
+        };
     }
 
     Ok(())

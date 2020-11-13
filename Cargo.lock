@@ -124,7 +124,6 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "job_scheduler",
- "lazy_static",
  "log",
  "log-panics",
  "parking_lot",
