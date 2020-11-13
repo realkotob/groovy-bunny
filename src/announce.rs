@@ -202,7 +202,7 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
                     if did_size > 0 {
                         let mut names_added = 0;
                         let mut msg_did_worklog = "posted in the past week, congrats!".to_string();
-
+                        let mut names_strings = "".to_string();
                         for elem in did_speak {
                             let user_res = &ctx.http.get_user(elem);
                             match user_res {
@@ -219,13 +219,25 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
                                         None => {}
                                     };
 
-                                    msg_did_worklog = format!("{} {}", user_nick, &msg_did_worklog);
+                                    if did_size == 1 {
+                                        names_strings = user_nick;
+                                    } else if names_added >= did_size {
+                                        names_strings =
+                                            format!("{}and {}", &names_strings, user_nick);
+                                    } else if did_size == 2 {
+                                        names_strings = format!("{} {}", user_nick, &names_strings);
+                                    } else {
+                                        names_strings =
+                                            format!("{}, {}", user_nick, &names_strings);
+                                    }
                                 }
                                 Err(why) => {
                                     error!("Error getting user with id {}. {:?}", elem, why);
                                 }
                             };
                         }
+                        msg_did_worklog = format!("{} {}", &names_strings, &msg_did_worklog);
+
                         if names_added > 0 {
                             let say_res = guild_lock.read().say(&ctx.http, msg_did_worklog);
                             match say_res {

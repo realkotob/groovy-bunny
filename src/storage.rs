@@ -5,10 +5,12 @@ use log::*;
 use serenity::prelude::Context;
 use std::fs;
 
+use chrono::prelude::*;
 use job_scheduler::{Job, JobScheduler, Schedule};
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{Error, Read, Write};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 pub fn save_reminder(
@@ -50,11 +52,10 @@ pub fn save_reminder(
 
 pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
     info!("Try load reminders list.");
-    use chrono::prelude::*;
     let path = "cache/data.txt";
-    use std::sync::{Arc, Mutex};
 
-    let ctx = Arc::new(Mutex::new(ctx_src));
+    // let ctx = Arc::new(Mutex::new(ctx_src));
+    let ctx = Arc::new(ctx_src);
 
     let mut scheduler = JobScheduler::new();
 
@@ -98,7 +99,7 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
                 let time_since_message = Utc::now().signed_duration_since(datetime).num_seconds();
 
                 if time_since_message < time_to_wait_in_seconds {
-                    println!(
+                    info!(
                         "Schedule loaded reminder. user: {} msg: {}",
                         user_id, remind_msg
                     );
@@ -124,19 +125,22 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
 
                                 info!("Remind user {} about {}", user_id, remind_msg);
 
-                                let unlocked_ctx = &*cloned_ctx.lock().unwrap();
+                                // let unlocked_ctx = &*cloned_ctx.lock().unwrap();
                                 let remind_msg = remind_msg.replace("/n", "\n");
 
-                                let res_user = unlocked_ctx.http.get_user(user_id);
+                                let res_user = &cloned_ctx.http.get_user(user_id);
 
                                 match res_user {
                                     Ok(user_unwrapped) => {
+                                        debug!("Fetched user to send stored reminder");
                                         let dm_result = user_unwrapped
-                                            .direct_message(unlocked_ctx, move |m| {
+                                            .direct_message(&cloned_ctx.http, move |m| {
                                                 m.content(remind_msg)
                                             });
                                         match dm_result {
-                                            Ok(_) => {}
+                                            Ok(_) => {
+                                                debug!("Sent DM for stored reminder.");
+                                            }
                                             Err(why) => error!(
                                                 "Failed to send DM for stored reminder. {:?}",
                                                 why
@@ -164,10 +168,10 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
 
     info!("Reminders loaded from file into memory.");
 
-    let cloned_ctx = Arc::clone(&ctx);
-    let unlocked_ctx = &*cloned_ctx.lock().unwrap();
+    // let cloned_ctx = Arc::clone(&ctx);
+    // let unlocked_ctx = &*cloned_ctx.lock().unwrap();
 
-    match announce::schedule_announcements(unlocked_ctx, scheduler) {
+    match announce::schedule_announcements(&ctx.clone(), scheduler) {
         Ok(_x) => info!("Scheduled announcements OK."),
         Err(why) => error!("Error in schedule_announcements. {:?}", why),
     };
