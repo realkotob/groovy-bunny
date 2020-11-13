@@ -7,25 +7,19 @@ use std::time::Duration;
 
 use lazy_static::lazy_static;
 
-lazy_static! {
-    static ref TOKEN: String = {
-        let mut file = File::open(".token").unwrap();
-        let mut token = String::new();
-        file.read_to_string(&mut token)
-            .expect("Token could not be read");
+pub fn get_token_from_file() -> String {
+    let mut file = File::open(".token").unwrap();
+    let mut token = String::new();
+    file.read_to_string(&mut token)
+        .expect("Token could not be read");
 
-        token
-    };
+    token
+}
+lazy_static! {
+    static ref TOKEN: String = get_token_from_file();
 }
 
 pub fn get_token() -> String {
-    // let mut file = File::open(".token").unwrap();
-    // let mut token = String::new();
-    // file.read_to_string(&mut token)
-    //     .expect("Token could not be read");
-
-    // token
-
     TOKEN.to_string()
 }
 

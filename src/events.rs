@@ -35,6 +35,8 @@ impl EventHandler for Handler {
                 "👀" => {
                     use std::thread;
 
+                    let rx_user = reaction.user(&ctx).unwrap();
+
                     let message_content = &reaction_msg.content;
                     let msg_args: Vec<&str> = message_content.split_whitespace().collect();
                     debug!(
@@ -53,15 +55,12 @@ impl EventHandler for Handler {
                                 time_since_message as i32,
                                 Vec::from(date_args),
                             );
-                        if reaction_msg.author.id == reaction.user_id
-                            || reaction.user(&ctx).unwrap().bot
-                        {
+                        if reaction_msg.author.id == reaction.user_id || rx_user.bot {
                             debug!("Bots and original user cannot be reminded with reaction.");
                         } else if time_to_wait_in_seconds <= 0 {
-                            let dm_confirm =
-                                reaction.user(&ctx).unwrap().direct_message(&ctx, |m| {
-                                    m.content(format!("Reminder already passed."))
-                                });
+                            let dm_confirm = rx_user.direct_message(&ctx, |m| {
+                                m.content(format!("Reminder already passed."))
+                            });
 
                             match dm_confirm {
                                 Ok(_) => {}
@@ -86,7 +85,7 @@ impl EventHandler for Handler {
                             }
                             // TODO Add rest of the arguments to the message
                             let remind_msg = format!("Reminder for link: {}", &msg_url);
-                            let dm_confirm = reaction.user(&ctx).unwrap().direct_message(&ctx, |m| {
+                            let dm_confirm = rx_user.direct_message(&ctx, |m| {
                                 m.content(format!(
                                     "Reminder will be DMed in {} from original message date. Others can react with 👀 to also be reminded.",
                                     &reply_msg
@@ -98,11 +97,11 @@ impl EventHandler for Handler {
                                     error!("Error sending confirmation notification DM {:?}", why);
                                 }
                             }
-                            let user_id = &reaction.user(&ctx).unwrap().id.0;
+                            let user_id = rx_user.id.0;
                             match storage::save_reminder(
                                 reaction_msg.timestamp.timestamp(),
                                 time_to_wait_in_seconds,
-                                *user_id,
+                                user_id,
                                 remind_msg.to_string(),
                             ) {
                                 Ok(_x) => {}
@@ -116,7 +115,7 @@ impl EventHandler for Handler {
                                 0,
                             ));
 
-                            storage::send_reminder(user_id.clone(), remind_msg);
+                            storage::send_reminder(user_id, remind_msg);
                         }
                     }
                     ()
