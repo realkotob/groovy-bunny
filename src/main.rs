@@ -44,8 +44,8 @@ fn main() {
             .configure(|c| c.prefix("!"))
             .group(&GENERAL_GROUP),
     );
-    if let Err(why) = client.start() {
-        error!("Error: {:?}", why);
+    if let Err(msg) = client.start() {
+        error!("Error: {:?}", msg);
     }
 }
 

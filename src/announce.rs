@@ -10,12 +10,10 @@ use std::time::Duration;
 
 use serenity::prelude::Context;
 
-static TEST_CHANNEL: bool = true;
-
 pub fn schedule_announcements() -> Result<(), Error> {
     let mut sched_announce = JobScheduler::new();
 
-    sched_announce.add(Job::new("1/10 * * * * *".parse().unwrap(), || {
+    sched_announce.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
         match check_work_log() {
             Ok(_x) => info!("Checked worklog loaded."),
             Err(why) => error!("Error checking worklog {:?}", why),
@@ -50,12 +48,9 @@ pub fn schedule_announcements() -> Result<(), Error> {
 pub fn send_qa_day_dev_reminder() -> Result<(), Error> {
     let ctx_http = globalstate::make_http();
 
-    let mut reminder_channel_id: u64 = 705037778471223339; // Real
-    if (TEST_CHANNEL) {
-        reminder_channel_id = 775708031668977666;
-    }
+    let dev_reminder_channel_id: u64 = 705037778471223339;
 
-    let dev_reminder_chan = ctx_http.get_channel(reminder_channel_id);
+    let dev_reminder_chan = ctx_http.get_channel(dev_reminder_channel_id);
     let dev_role_id: u64 = 705034249652273153;
 
     let msg_dev_remider = format!(
@@ -91,11 +86,9 @@ pub fn send_qa_day_dev_reminder() -> Result<(), Error> {
 pub fn send_qa_day_all_reminder() -> Result<(), Error> {
     let ctx_http = globalstate::make_http();
 
-    let mut reminder_channel_id: u64 = 705090277794119790; // Real
-    if (TEST_CHANNEL) {
-        reminder_channel_id = 775708031668977666;
-    }
-    let dev_reminder_chan = ctx_http.get_channel(reminder_channel_id);
+    let dev_reminder_channel_id: u64 = 705090277794119790;
+
+    let dev_reminder_chan = ctx_http.get_channel(dev_reminder_channel_id);
 
     let msg_dev_remider = format!("Today is QA Day! Happy testing @here !",);
 
@@ -127,13 +120,11 @@ pub fn send_qa_day_all_reminder() -> Result<(), Error> {
 pub fn check_work_log() -> Result<(), Error> {
     let ctx_http = globalstate::make_http();
 
-    let mut reminder_channel_id: u64 = 705067423530745957; // Real
-    if (TEST_CHANNEL) {
-        reminder_channel_id = 775708031668977666;
-    }
+    let worklog_channel_id: u64 = 705067423530745957; // Real
+
     // let worklog_channel_id: u64 = 774206671358394439; // Test
 
-    let channel_id = ChannelId(reminder_channel_id);
+    let channel_id = ChannelId(worklog_channel_id);
 
     let all_devs: Vec<u64> = vec![
         492385983833047051,
@@ -182,7 +173,7 @@ pub fn check_work_log() -> Result<(), Error> {
         }
     }
 
-    let work_log_channel = ctx_http.get_channel(reminder_channel_id);
+    let work_log_channel = ctx_http.get_channel(worklog_channel_id);
 
     match work_log_channel {
         Ok(x) => {
