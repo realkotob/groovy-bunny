@@ -11,24 +11,24 @@ use serenity::prelude::Context;
 
 static TEST_CHANNEL: bool = false;
 
-pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
-    let mut sched_announce = JobScheduler::new();
+pub fn schedule_announcements(ctx: &Context, mut p_scheduler: JobScheduler) -> Result<(), Error> {
+    let mut scheduler = JobScheduler::new();
 
-    sched_announce.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
+    scheduler.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
         match check_work_log(&ctx) {
             Ok(_x) => info!("Checked worklog loaded."),
             Err(why) => error!("Error checking worklog {:?}", why),
         };
     }));
 
-    sched_announce.add(Job::new("0 0 13 * * TUE".parse().unwrap(), || {
+    scheduler.add(Job::new("0 0 13 * * TUE".parse().unwrap(), || {
         match send_qa_day_dev_reminder(&ctx) {
             Ok(_x) => info!("Sent QA day dev reminder."),
             Err(why) => error!("Error sending QA day dev reminder {:?}", why),
         };
     }));
 
-    sched_announce.add(Job::new("0 0 7 * * WED".parse().unwrap(), || {
+    scheduler.add(Job::new("0 0 7 * * WED".parse().unwrap(), || {
         match send_qa_day_all_reminder(&ctx) {
             Ok(_x) => info!("Sent QA dev reminder."),
             Err(why) => error!("Error sending QA day reminder {:?}", why),
@@ -38,7 +38,8 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
     info!("Scheduled announcement, now entering scheduler loop ...");
 
     loop {
-        sched_announce.tick();
+        scheduler.tick();
+        p_scheduler.tick();
 
         std::thread::sleep(Duration::from_millis(2000));
     }

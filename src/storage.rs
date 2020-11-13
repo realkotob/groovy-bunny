@@ -5,11 +5,11 @@ use log::*;
 use serenity::prelude::Context;
 use std::fs;
 
+use job_scheduler::{Job, JobScheduler, Schedule};
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{Error, Read, Write};
 use std::time::Duration;
-use task_scheduler::Scheduler;
 
 pub fn save_reminder(
     timestamp: i64,
@@ -56,12 +56,12 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
 
     let ctx = Arc::new(Mutex::new(ctx_src));
 
+    let mut scheduler = JobScheduler::new();
+
     if fs::metadata(path).is_ok() {
         let mut file = File::open(path).expect("File open failed");
         let mut contents = String::new();
         file.read_to_string(&mut contents).unwrap();
-
-        let scheduler = Scheduler::new();
 
         let split_args = contents.split("\n").map(|x| x.to_string());
 
@@ -116,36 +116,42 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
                                 error!("Error saving reminder {:?}", why);
                             }
                         };
-                        scheduler.after_duration(Duration::from_secs(final_time_wait), move || {
-                            info!("Remind user {} about {}", user_id, remind_msg);
 
-                            let unlocked_ctx = &*cloned_ctx.lock().unwrap();
-                            let remind_msg = remind_msg.replace("/n", "\n");
+                        scheduler.add(Job::new(
+                            Schedule::from_duration(Duration::from_secs(final_time_wait)),
+                            move || {
+                                // hey
 
-                            let res_user = unlocked_ctx.http.get_user(user_id);
+                                info!("Remind user {} about {}", user_id, remind_msg);
 
-                            match res_user {
-                                Ok(user_unwrapped) => {
-                                    let dm_result = user_unwrapped
-                                        .direct_message(unlocked_ctx, move |m| {
-                                            m.content(remind_msg)
-                                        });
-                                    match dm_result {
-                                        Ok(_) => {}
-                                        Err(why) => error!(
-                                            "Failed to send DM for stored reminder. {:?}",
-                                            why
-                                        ),
+                                let unlocked_ctx = &*cloned_ctx.lock().unwrap();
+                                let remind_msg = remind_msg.replace("/n", "\n");
+
+                                let res_user = unlocked_ctx.http.get_user(user_id);
+
+                                match res_user {
+                                    Ok(user_unwrapped) => {
+                                        let dm_result = user_unwrapped
+                                            .direct_message(unlocked_ctx, move |m| {
+                                                m.content(remind_msg)
+                                            });
+                                        match dm_result {
+                                            Ok(_) => {}
+                                            Err(why) => error!(
+                                                "Failed to send DM for stored reminder. {:?}",
+                                                why
+                                            ),
+                                        }
                                     }
-                                }
-                                Err(why) => {
-                                    error!(
+                                    Err(why) => {
+                                        error!(
                                         "Failed to retrieve user from id for stored reminder. {:?}",
                                         why
                                     );
+                                    }
                                 }
-                            }
-                        });
+                            },
+                        ));
                     }
                 }
             }
@@ -161,7 +167,7 @@ pub fn load_reminders(ctx_src: Context) -> Result<(), Error> {
     let cloned_ctx = Arc::clone(&ctx);
     let unlocked_ctx = &*cloned_ctx.lock().unwrap();
 
-    match announce::schedule_announcements(unlocked_ctx) {
+    match announce::schedule_announcements(unlocked_ctx, scheduler) {
         Ok(_x) => info!("Scheduled announcements OK."),
         Err(why) => error!("Error in schedule_announcements. {:?}", why),
     };

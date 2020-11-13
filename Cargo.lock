@@ -170,8 +170,7 @@ dependencies = [
 [[package]]
 name = "cron"
 version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab00a636277f7ea5d8dd92ac7a5099fc9a46e5327bba84d3640b41ae127eada9"
+source = "git+https://github.com/asheraryam/cron?branch=from_instant#db85bf0ccad63fe0068fcc864948eda9fcf8d4a7"
 dependencies = [
  "chrono",
  "error-chain 0.10.0",
@@ -498,8 +497,7 @@ checksum = "b8b7a7c0c47db5545ed3fef7468ee7bb5b74691498139e4b3f6a20685dc6dd8e"
 [[package]]
 name = "job_scheduler"
 version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51f368c9c76dde2282714ae32dc274b79c27527a0c06c816f6dda048904d0d7c"
+source = "git+https://github.com/asheraryam/job_scheduler?branch=after_duration#e67f547594c25b68eb1e4dbe6cc8837c4a5a7015"
 dependencies = [
  "chrono",
  "cron",
