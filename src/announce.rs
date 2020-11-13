@@ -9,26 +9,26 @@ use std::time::Duration;
 
 use serenity::prelude::Context;
 
-pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
-    let mut sched_worklog = JobScheduler::new();
-    let mut sched_qa_dev_reminder = JobScheduler::new();
-    let mut sched_qa_day = JobScheduler::new();
+static TEST_CHANNEL: bool = false;
 
-    sched_worklog.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
+pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
+    let mut sched_announce = JobScheduler::new();
+
+    sched_announce.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
         match check_work_log(&ctx) {
             Ok(_x) => info!("Checked worklog loaded."),
             Err(why) => error!("Error checking worklog {:?}", why),
         };
     }));
 
-    sched_qa_dev_reminder.add(Job::new("0 0 13 * * TUE".parse().unwrap(), || {
+    sched_announce.add(Job::new("0 0 13 * * TUE".parse().unwrap(), || {
         match send_qa_day_dev_reminder(&ctx) {
             Ok(_x) => info!("Sent QA day dev reminder."),
             Err(why) => error!("Error sending QA day dev reminder {:?}", why),
         };
     }));
 
-    sched_qa_day.add(Job::new("0 0 7 * * WED".parse().unwrap(), || {
+    sched_announce.add(Job::new("0 0 7 * * WED".parse().unwrap(), || {
         match send_qa_day_all_reminder(&ctx) {
             Ok(_x) => info!("Sent QA dev reminder."),
             Err(why) => error!("Error sending QA day reminder {:?}", why),
@@ -38,20 +38,21 @@ pub fn schedule_announcements(ctx: &Context) -> Result<(), Error> {
     info!("Scheduled announcement, now entering scheduler loop ...");
 
     loop {
-        sched_worklog.tick();
-        sched_qa_dev_reminder.tick();
-        sched_qa_day.tick();
+        sched_announce.tick();
 
-        std::thread::sleep(Duration::from_millis(500));
+        std::thread::sleep(Duration::from_millis(2000));
     }
 
     Ok(())
 }
 
 pub fn send_qa_day_dev_reminder(ctx: &Context) -> Result<(), Error> {
-    let dev_reminder_channel_id: u64 = 705037778471223339;
+    let mut reminder_channel_id: u64 = 705037778471223339; // Real
+    if TEST_CHANNEL {
+        reminder_channel_id = 775708031668977666;
+    }
 
-    let dev_reminder_chan = ctx.http.get_channel(dev_reminder_channel_id);
+    let dev_reminder_chan = ctx.http.get_channel(reminder_channel_id);
     let dev_role_id: u64 = 705034249652273153;
 
     let msg_dev_remider = format!(
@@ -85,9 +86,11 @@ pub fn send_qa_day_dev_reminder(ctx: &Context) -> Result<(), Error> {
 }
 
 pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
-    let dev_reminder_channel_id: u64 = 705090277794119790;
-
-    let dev_reminder_chan = ctx.http.get_channel(dev_reminder_channel_id);
+    let mut reminder_channel_id: u64 = 705090277794119790; // Real
+    if TEST_CHANNEL {
+        reminder_channel_id = 775708031668977666;
+    }
+    let dev_reminder_chan = ctx.http.get_channel(reminder_channel_id);
 
     let msg_dev_remider = format!("Today is QA Day! Happy testing @here !",);
 
@@ -117,11 +120,13 @@ pub fn send_qa_day_all_reminder(ctx: &Context) -> Result<(), Error> {
 }
 
 pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
-    let worklog_channel_id: u64 = 705067423530745957; // Real
-
+    let mut reminder_channel_id: u64 = 705067423530745957; // Real
+    if TEST_CHANNEL {
+        reminder_channel_id = 775708031668977666;
+    }
     // let worklog_channel_id: u64 = 774206671358394439; // Test
 
-    let channel_id = ChannelId(worklog_channel_id);
+    let channel_id = ChannelId(reminder_channel_id);
 
     let all_devs: Vec<u64> = vec![
         492385983833047051,
@@ -170,7 +175,7 @@ pub fn check_work_log(ctx: &Context) -> Result<(), Error> {
         }
     }
 
-    let work_log_channel = ctx.http.get_channel(worklog_channel_id);
+    let work_log_channel = ctx.http.get_channel(reminder_channel_id);
 
     match work_log_channel {
         Ok(x) => {
