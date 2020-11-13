@@ -37,7 +37,12 @@ fn main() {
 
     log_panics::init();
 
-    let mut client = Client::new(globalstate::get_token(), Handler).expect("Error creating client");
+    let mut file = File::open(".token").unwrap();
+    let mut token = String::new();
+    file.read_to_string(&mut token)
+        .expect("Token could not be read");
+
+    let mut client = Client::new(&token, Handler).expect("Error creating client");
 
     client.with_framework(
         StandardFramework::new()
