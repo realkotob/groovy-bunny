@@ -14,12 +14,12 @@ static TEST_CHANNEL: bool = false;
 pub fn schedule_announcements(ctx: &Context, mut p_scheduler: JobScheduler) -> Result<(), Error> {
     let mut scheduler = JobScheduler::new();
 
-    scheduler.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
-        match check_work_log(&ctx) {
-            Ok(_x) => info!("Checked worklog loaded."),
-            Err(why) => error!("Error checking worklog {:?}", why),
-        };
-    }));
+    // scheduler.add(Job::new("0 0 9 * * FRI".parse().unwrap(), || {
+    //     match check_work_log(&ctx) {
+    //         Ok(_x) => info!("Checked worklog loaded."),
+    //         Err(why) => error!("Error checking worklog {:?}", why),
+    //     };
+    // }));
 
     scheduler.add(Job::new("0 0 13 * * TUE".parse().unwrap(), || {
         match send_qa_day_dev_reminder(&ctx) {
